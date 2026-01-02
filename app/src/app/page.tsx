@@ -252,7 +252,7 @@ export default function Home() {
                 className="w-full h-24 bg-void-deep border border-violet-500/30 rounded-lg p-4 text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:border-violet-500 focus:glow-quantum resize-none"
               />
               <p className="text-text-muted/60 text-xs">
-                Stays in your browser only. Never sent to any server.
+                For your reflection only. Never sent anywhere or used in card selection.
               </p>
             </div>
 
