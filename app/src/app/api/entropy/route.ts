@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 
-// Primary: German LfD QRNG (working, no auth required)
+// Primary: German LfD QRNG (ID Quantique hardware)
+// API docs: https://lfdr.de/QRNG/
 const LFD_API_URL = 'https://lfdr.de/qrng_api';
 
-// Backup: ANU QRNG (cert currently expired)
+// Backup: ANU QRNG (cert currently expired as of Jan 2026)
 const ANU_API_URL = 'https://qrng.anu.edu.au/API/jsonI.php';
 
 interface ANUResponse {
@@ -13,28 +14,37 @@ interface ANUResponse {
   success: boolean;
 }
 
+function hexToBytes(hex: string): number[] {
+  const bytes: number[] = [];
+  // Remove any whitespace and process hex pairs
+  const cleanHex = hex.replace(/\s/g, '');
+  for (let i = 0; i < cleanHex.length; i += 2) {
+    bytes.push(parseInt(cleanHex.substr(i, 2), 16));
+  }
+  return bytes;
+}
+
 async function fetchLfdEntropy(count: number): Promise<number[]> {
-  const results: number[] = [];
-
-  // LfD returns one number per request, so we batch requests
-  // Request more than needed to ensure uniqueness
-  const promises = Array(count * 2).fill(null).map(async () => {
-    const response = await fetch(LFD_API_URL, {
+  // Request bytes in HEX format - each byte is 2 hex chars
+  const response = await fetch(
+    `${LFD_API_URL}?length=${count}&format=HEX`,
+    {
       method: 'GET',
-      headers: { 'Accept': 'application/json' },
-    });
-
-    if (!response.ok) {
-      throw new Error(`LfD QRNG error: ${response.status}`);
+      headers: { 'Accept': 'text/plain' },
     }
+  );
 
-    const data = await response.json();
-    // LfD returns a large integer, we take modulo 256 for uint8 equivalent
-    return Math.abs(data) % 256;
-  });
+  if (!response.ok) {
+    throw new Error(`LfD QRNG error: ${response.status}`);
+  }
 
-  const values = await Promise.all(promises);
-  return values;
+  const hexString = await response.text();
+
+  if (!hexString || hexString.length < 2) {
+    throw new Error('LfD QRNG returned empty response');
+  }
+
+  return hexToBytes(hexString);
 }
 
 async function fetchAnuEntropy(count: number): Promise<number[]> {
@@ -61,9 +71,9 @@ async function fetchAnuEntropy(count: number): Promise<number[]> {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const count = Math.min(parseInt(searchParams.get('count') || '50'), 100);
+  const count = Math.min(parseInt(searchParams.get('count') || '50'), 1024);
 
-  // Try LfD QRNG first (Germany - working)
+  // Try LfD QRNG first (Germany - working, uses ID Quantique hardware)
   try {
     const data = await fetchLfdEntropy(count);
     return NextResponse.json({
@@ -89,7 +99,7 @@ export async function GET(request: Request) {
     console.error('ANU QRNG error:', error);
   }
 
-  // All server-side sources failed
+  // All server-side sources failed - client should try CamRNG
   return NextResponse.json(
     {
       success: false,
