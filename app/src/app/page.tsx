@@ -122,6 +122,189 @@ function SpreadDiagram({ spreadId, selected }: { spreadId: string; selected: boo
   }
 }
 
+// Card slot for spread layouts - handles animation timing
+interface CardSlotProps {
+  drawn: DrawnCard;
+  index: number;
+  position: { name: string; description: string };
+  selectedCard: number | null;
+  setSelectedCard: (index: number | null) => void;
+  size?: 'sm' | 'md';
+  className?: string;
+  crossCard?: boolean;
+}
+
+function CardSlot({ drawn, index, position, selectedCard, setSelectedCard, size = 'sm', className = '', crossCard = false }: CardSlotProps) {
+  const CARD_DELAY = 0.6; // seconds between each card
+
+  return (
+    <motion.div
+      className={`relative ${className} ${index === selectedCard ? 'z-20' : 'z-0'} ${crossCard ? 'rotate-90' : ''}`}
+      initial={{ opacity: 0, scale: 0.3, y: -50 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={{
+        delay: index * CARD_DELAY,
+        duration: 0.5,
+        ease: [0.16, 1, 0.3, 1]
+      }}
+    >
+      <div className="text-center mb-1">
+        <span className="text-[9px] md:text-[10px] text-text-muted font-mono leading-tight block">
+          {position.name}
+        </span>
+      </div>
+      <TarotCard
+        card={drawn.card}
+        reversed={drawn.reversed}
+        revealed={true}
+        delay={index * CARD_DELAY}
+        onClick={() => setSelectedCard(selectedCard === index ? null : index)}
+        size={size}
+      />
+      {drawn.reversed && (
+        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] text-violet-400 font-mono">
+          reversed
+        </span>
+      )}
+    </motion.div>
+  );
+}
+
+// Spread-specific layouts that match the picker diagrams
+interface SpreadLayoutProps {
+  drawnCards: DrawnCard[];
+  positions: { name: string; description: string }[];
+  spreadId: string;
+  selectedCard: number | null;
+  setSelectedCard: (index: number | null) => void;
+}
+
+function SpreadLayout({ drawnCards, positions, spreadId, selectedCard, setSelectedCard }: SpreadLayoutProps) {
+  const slotProps = (index: number, extra: Partial<CardSlotProps> = {}) => ({
+    drawn: drawnCards[index],
+    index,
+    position: positions[index],
+    selectedCard,
+    setSelectedCard,
+    ...extra,
+  });
+
+  switch (spreadId) {
+    case 'single':
+      return (
+        <div className="flex justify-center">
+          <CardSlot {...slotProps(0, { size: 'md' })} />
+        </div>
+      );
+
+    case 'three-card':
+      return (
+        <div className="flex justify-center items-start gap-4 md:gap-6">
+          <CardSlot {...slotProps(0, { size: 'md' })} />
+          <CardSlot {...slotProps(1, { size: 'md' })} />
+          <CardSlot {...slotProps(2, { size: 'md' })} />
+        </div>
+      );
+
+    case 'five-card':
+      return (
+        <div className="flex flex-col items-center gap-3">
+          {/* Top: Future */}
+          <CardSlot {...slotProps(3)} />
+          {/* Middle row: Past - Present - Challenge */}
+          <div className="flex justify-center items-start gap-3">
+            <CardSlot {...slotProps(2)} />
+            <CardSlot {...slotProps(0)} />
+            <CardSlot {...slotProps(1)} />
+          </div>
+          {/* Bottom: Outcome */}
+          <CardSlot {...slotProps(4)} />
+        </div>
+      );
+
+    case 'celtic-cross':
+    case 'celtic-cross-plus':
+      return (
+        <div className="flex flex-col md:flex-row justify-center items-center gap-6 md:gap-8">
+          {/* Cross section */}
+          <div className="grid grid-cols-3 gap-2 items-center justify-items-center" style={{ gridTemplateRows: 'auto auto auto' }}>
+            {/* Row 1: Crown (top) */}
+            <div />
+            <CardSlot {...slotProps(4)} />
+            <div />
+            {/* Row 2: Past - Present/Challenge - Future */}
+            <CardSlot {...slotProps(3)} />
+            <div className="relative">
+              <CardSlot {...slotProps(0)} />
+              {/* Challenge card crosses the present */}
+              <motion.div
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10"
+                initial={{ opacity: 0, scale: 0.3, rotate: 90 }}
+                animate={{ opacity: 1, scale: 1, rotate: 90 }}
+                transition={{ delay: 1 * 0.6, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <TarotCard
+                  card={drawnCards[1].card}
+                  reversed={drawnCards[1].reversed}
+                  revealed={true}
+                  delay={1 * 0.6}
+                  onClick={() => setSelectedCard(selectedCard === 1 ? null : 1)}
+                  size="sm"
+                />
+              </motion.div>
+            </div>
+            <CardSlot {...slotProps(5)} />
+            {/* Row 3: Foundation (bottom) */}
+            <div />
+            <CardSlot {...slotProps(2)} />
+            <div />
+          </div>
+          {/* Staff section (right side) */}
+          <div className="flex flex-row md:flex-col gap-2 md:gap-3">
+            <CardSlot {...slotProps(9)} />
+            <CardSlot {...slotProps(8)} />
+            <CardSlot {...slotProps(7)} />
+            <CardSlot {...slotProps(6)} />
+            {spreadId === 'celtic-cross-plus' && drawnCards[10] && (
+              <CardSlot {...slotProps(10)} />
+            )}
+          </div>
+        </div>
+      );
+
+    case 'relationship-reflection':
+      return (
+        <div className="flex flex-col items-center gap-4">
+          {/* Row 1: What I Bring / What They Bring */}
+          <div className="flex justify-center items-start gap-8 md:gap-12">
+            <CardSlot {...slotProps(0)} />
+            <CardSlot {...slotProps(1)} />
+          </div>
+          {/* Row 2: The Dynamic (centered between them) */}
+          <CardSlot {...slotProps(2)} />
+          {/* Row 3: Blind Spot / Their Experience / Unspoken */}
+          <div className="flex justify-center items-start gap-3 md:gap-4">
+            <CardSlot {...slotProps(3)} />
+            <CardSlot {...slotProps(4)} />
+            <CardSlot {...slotProps(5)} />
+          </div>
+          {/* Row 4: The Lesson */}
+          <CardSlot {...slotProps(6)} />
+        </div>
+      );
+
+    default:
+      // Fallback: simple grid
+      return (
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 justify-items-center">
+          {drawnCards.map((drawn, index) => (
+            <CardSlot key={drawn.card.id} {...slotProps(index)} />
+          ))}
+        </div>
+      );
+  }
+}
+
 export default function Home() {
   const [state, setState] = useState<AppState>('intention');
   const [intention, setIntention] = useState('');
@@ -425,42 +608,14 @@ export default function Home() {
               <EntropyIndicator source={reading.entropySource} />
             </div>
 
-            {/* Card Spread - Grid Layout */}
-            <div className={`grid gap-3 md:gap-4 justify-items-center items-start ${
-              reading.spread.cardCount === 1 ? 'grid-cols-1 max-w-xs mx-auto' :
-              reading.spread.cardCount <= 3 ? 'grid-cols-3 max-w-md mx-auto' :
-              reading.spread.cardCount <= 5 ? 'grid-cols-3 sm:grid-cols-5 max-w-2xl mx-auto' :
-              'grid-cols-3 sm:grid-cols-4 md:grid-cols-6'
-            }`}>
-              {reading.drawnCards.map((drawn, index) => (
-                <motion.div
-                  key={drawn.card.id}
-                  className={`relative ${index === selectedCard ? 'z-10' : 'z-0'}`}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.15 }}
-                >
-                  <div className="text-center mb-2">
-                    <span className="text-[10px] md:text-xs text-text-muted font-mono">
-                      {reading.spread.positions[index]?.name || `Card ${index + 1}`}
-                    </span>
-                  </div>
-                  <TarotCard
-                    card={drawn.card}
-                    reversed={drawn.reversed}
-                    revealed={true}
-                    delay={index * 0.15}
-                    onClick={() => setSelectedCard(selectedCard === index ? null : index)}
-                    size={reading.spread.cardCount <= 3 ? 'md' : 'sm'}
-                  />
-                  {drawn.reversed && (
-                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] md:text-[10px] text-violet-400 font-mono">
-                      reversed
-                    </span>
-                  )}
-                </motion.div>
-              ))}
-            </div>
+            {/* Card Spread - Layout matches picker diagram */}
+            <SpreadLayout
+              drawnCards={reading.drawnCards}
+              positions={reading.spread.positions}
+              spreadId={reading.spread.id}
+              selectedCard={selectedCard}
+              setSelectedCard={setSelectedCard}
+            />
 
             {/* Selected Card Detail */}
             <AnimatePresence>
