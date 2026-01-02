@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 // Primary: German LfD QRNG (ID Quantique hardware)
 // API docs: https://lfdr.de/QRNG/
-const LFD_API_URL = 'https://lfdr.de/qrng_api';
+const LFD_API_URL = 'https://lfdr.de/qrng_api/qrng';
 
 // Backup: ANU QRNG (cert currently expired as of Jan 2026)
 const ANU_API_URL = 'https://qrng.anu.edu.au/API/jsonI.php';
@@ -24,13 +24,18 @@ function hexToBytes(hex: string): number[] {
   return bytes;
 }
 
+interface LfdResponse {
+  length: number;
+  qrn: string;
+}
+
 async function fetchLfdEntropy(count: number): Promise<number[]> {
   // Request bytes in HEX format - each byte is 2 hex chars
   const response = await fetch(
     `${LFD_API_URL}?length=${count}&format=HEX`,
     {
       method: 'GET',
-      headers: { 'Accept': 'text/plain' },
+      headers: { 'Accept': 'application/json' },
     }
   );
 
@@ -38,13 +43,13 @@ async function fetchLfdEntropy(count: number): Promise<number[]> {
     throw new Error(`LfD QRNG error: ${response.status}`);
   }
 
-  const hexString = await response.text();
+  const data: LfdResponse = await response.json();
 
-  if (!hexString || hexString.length < 2) {
+  if (!data.qrn || data.qrn.length < 2) {
     throw new Error('LfD QRNG returned empty response');
   }
 
-  return hexToBytes(hexString);
+  return hexToBytes(data.qrn);
 }
 
 async function fetchAnuEntropy(count: number): Promise<number[]> {
