@@ -16,6 +16,112 @@ interface ReadingData {
   spread: Spread;
 }
 
+// Mini card visualization for spread picker
+function MiniCard({ className = '', highlight = false }: { className?: string; highlight?: boolean }) {
+  return (
+    <div
+      className={`w-2 h-3 rounded-[1px] ${
+        highlight ? 'bg-violet-400' : 'bg-violet-500/40'
+      } ${className}`}
+    />
+  );
+}
+
+function SpreadDiagram({ spreadId, selected }: { spreadId: string; selected: boolean }) {
+  const highlight = selected;
+
+  switch (spreadId) {
+    case 'single':
+      return (
+        <div className="flex items-center justify-center">
+          <MiniCard highlight={highlight} className="w-3 h-4" />
+        </div>
+      );
+
+    case 'three-card':
+      return (
+        <div className="flex items-center gap-1">
+          <MiniCard highlight={highlight} />
+          <MiniCard highlight={highlight} />
+          <MiniCard highlight={highlight} />
+        </div>
+      );
+
+    case 'five-card':
+      return (
+        <div className="grid grid-cols-3 gap-0.5 items-center justify-items-center">
+          <div />
+          <MiniCard highlight={highlight} />
+          <div />
+          <MiniCard highlight={highlight} />
+          <MiniCard highlight={highlight} />
+          <MiniCard highlight={highlight} />
+          <div />
+          <MiniCard highlight={highlight} />
+          <div />
+        </div>
+      );
+
+    case 'celtic-cross':
+    case 'celtic-cross-plus':
+      return (
+        <div className="flex items-center gap-1">
+          {/* Cross section */}
+          <div className="grid grid-cols-3 gap-0.5 items-center justify-items-center">
+            <div />
+            <MiniCard highlight={highlight} />
+            <div />
+            <MiniCard highlight={highlight} />
+            <div className="relative">
+              <MiniCard highlight={highlight} />
+              <MiniCard highlight={highlight} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-90" />
+            </div>
+            <MiniCard highlight={highlight} />
+            <div />
+            <MiniCard highlight={highlight} />
+            <div />
+          </div>
+          {/* Staff section */}
+          <div className="flex flex-col gap-0.5">
+            <MiniCard highlight={highlight} />
+            <MiniCard highlight={highlight} />
+            <MiniCard highlight={highlight} />
+            <MiniCard highlight={highlight} />
+          </div>
+        </div>
+      );
+
+    case 'relationship-reflection':
+      return (
+        <div className="flex flex-col items-center gap-0.5">
+          {/* Top row: What each brought */}
+          <div className="flex items-center gap-2">
+            <MiniCard highlight={highlight} />
+            <MiniCard highlight={highlight} />
+          </div>
+          {/* Middle: The dynamic */}
+          <MiniCard highlight={highlight} />
+          {/* Bottom rows */}
+          <div className="flex items-center gap-1">
+            <MiniCard highlight={highlight} />
+            <MiniCard highlight={highlight} />
+            <MiniCard highlight={highlight} />
+          </div>
+          <MiniCard highlight={highlight} />
+        </div>
+      );
+
+    default:
+      return (
+        <div className="flex items-center gap-0.5">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <MiniCard key={i} highlight={highlight} />
+          ))}
+        </div>
+      );
+  }
+}
+
 export default function Home() {
   const [state, setState] = useState<AppState>('intention');
   const [intention, setIntention] = useState('');
@@ -201,25 +307,31 @@ export default function Home() {
             </motion.div>
 
             {/* Spread Selector */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               <p className="text-text-mystic text-sm font-display">Choose your spread</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {SPREADS.map((spread) => (
                   <button
                     key={spread.id}
                     onClick={() => setSelectedSpread(spread)}
-                    className={`p-3 rounded-lg border transition-all text-left ${
+                    className={`p-3 rounded-lg border transition-all flex flex-col items-center gap-2 ${
                       selectedSpread.id === spread.id
                         ? 'border-violet-500 bg-violet-500/20 glow-quantum'
                         : 'border-violet-500/30 bg-void-deep hover:border-violet-500/60'
                     }`}
                   >
-                    <div className="text-sm font-display text-text-primary">{spread.name}</div>
-                    <div className="text-xs text-text-muted">{spread.cardCount} cards</div>
+                    {/* Mini spread visualization */}
+                    <div className="h-12 flex items-center justify-center">
+                      <SpreadDiagram spreadId={spread.id} selected={selectedSpread.id === spread.id} />
+                    </div>
+                    <div className="text-center">
+                      <div className="text-sm font-display text-text-primary">{spread.name}</div>
+                      <div className="text-[10px] text-text-muted">{spread.cardCount} cards</div>
+                    </div>
                   </button>
                 ))}
               </div>
-              <p className="text-text-muted text-xs">{selectedSpread.description}</p>
+              <p className="text-text-muted text-xs text-center max-w-sm mx-auto">{selectedSpread.description}</p>
             </div>
 
             <div className="space-y-4">
