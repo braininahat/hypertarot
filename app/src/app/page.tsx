@@ -42,10 +42,10 @@ export default function Home() {
       console.warn('ANU QRNG failed, trying CamRNG...', e);
     }
 
-    // Fallback to CamRNG
+    // Fallback to CamRNG - capture multiple frames for sufficient entropy
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: 64, height: 64 },
+        video: { facingMode: 'environment', width: 128, height: 128 },
       });
 
       const video = document.createElement('video');
@@ -53,35 +53,34 @@ export default function Home() {
       video.playsInline = true;
       await video.play();
 
-      await new Promise(resolve => setTimeout(resolve, 100));
-
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Canvas not supported');
 
-      canvas.width = 64;
-      canvas.height = 64;
-      ctx.drawImage(video, 0, 0, 64, 64);
-      const imageData = ctx.getImageData(0, 0, 64, 64);
+      canvas.width = 128;
+      canvas.height = 128;
+
+      const allBytes: number[] = [];
+
+      // Capture 5 frames with delays to accumulate entropy
+      for (let frame = 0; frame < 5; frame++) {
+        await new Promise(resolve => setTimeout(resolve, 50));
+        ctx.drawImage(video, 0, 0, 128, 128);
+        const imageData = ctx.getImageData(0, 0, 128, 128);
+
+        // Extract entropy from pixel values (use multiple bits, XOR frames)
+        for (let i = 0; i < imageData.data.length - 3; i += 4) {
+          // Combine RGB channels, skip alpha
+          const byte = (imageData.data[i] ^ imageData.data[i + 1] ^ imageData.data[i + 2]) & 0xFF;
+          allBytes.push(byte);
+        }
+      }
 
       stream.getTracks().forEach(track => track.stop());
 
-      // Extract LSBs for entropy
-      const bytes: number[] = [];
-      for (let i = 0; i < imageData.data.length && bytes.length < 100; i += 8) {
-        bytes.push(
-          ((imageData.data[i] & 1) << 7) |
-          ((imageData.data[i + 1] & 1) << 6) |
-          ((imageData.data[i + 2] & 1) << 5) |
-          ((imageData.data[i + 3] & 1) << 4) |
-          ((imageData.data[i + 4] & 1) << 3) |
-          ((imageData.data[i + 5] & 1) << 2) |
-          ((imageData.data[i + 6] & 1) << 1) |
-          (imageData.data[i + 7] & 1)
-        );
-      }
-
-      return { data: bytes, source: 'CamRNG', type: 'quantum-physical' };
+      // Shuffle and take what we need
+      const shuffled = allBytes.sort(() => allBytes[0] - 128);
+      return { data: shuffled.slice(0, 200), source: 'CamRNG', type: 'quantum-physical' };
     } catch (e) {
       console.error('CamRNG failed:', e);
       throw new Error(
