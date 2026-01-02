@@ -30,7 +30,7 @@ export const SPREADS: Spread[] = [
   {
     id: 'single',
     name: 'Single Card',
-    description: 'A quick insight or daily guidance',
+    description: 'Daily check-in, quick yes/no energy, or a theme to meditate on',
     cardCount: 1,
     positions: [
       { name: 'The Card', description: 'Your message from the quantum void' },
@@ -39,7 +39,7 @@ export const SPREADS: Spread[] = [
   {
     id: 'three-card',
     name: 'Three Card',
-    description: 'Past, Present, Future - a simple timeline',
+    description: 'Simple situation overview: how did I get here, where am I, where is this going?',
     cardCount: 3,
     positions: [
       { name: 'Past', description: 'What has led to this moment' },
@@ -50,7 +50,7 @@ export const SPREADS: Spread[] = [
   {
     id: 'five-card',
     name: 'Five Card Cross',
-    description: 'A focused spread for specific questions',
+    description: 'Focused question with context: "Should I take this job?" "Is this relationship right?"',
     cardCount: 5,
     positions: [
       { name: 'Present', description: 'Your current situation' },
@@ -63,7 +63,7 @@ export const SPREADS: Spread[] = [
   {
     id: 'celtic-cross',
     name: 'Celtic Cross',
-    description: 'The classic 10-card comprehensive reading',
+    description: 'Deep dive into a complex situation: life transitions, major decisions, recurring patterns',
     cardCount: 10,
     positions: [
       { name: 'Present', description: 'Your current situation' },
@@ -81,7 +81,7 @@ export const SPREADS: Spread[] = [
   {
     id: 'celtic-cross-plus',
     name: 'Celtic Cross + Clarifier',
-    description: 'Extended 11-card reading with additional insight',
+    description: 'When the outcome needs more context, or when one card feels especially cryptic',
     cardCount: 11,
     positions: [
       { name: 'Present', description: 'Your current situation' },
