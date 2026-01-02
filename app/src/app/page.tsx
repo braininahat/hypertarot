@@ -11,7 +11,6 @@ type AppState = 'intention' | 'drawing' | 'reading';
 interface ReadingData {
   drawnCards: DrawnCard[];
   entropySource: string;
-  entropyType: 'quantum' | 'quantum-physical';
   intention: string;
   timestamp: Date;
   spread: Spread;
@@ -30,66 +29,20 @@ export default function Home() {
   const fetchQuantumEntropy = useCallback(async (): Promise<{
     data: number[];
     source: string;
-    type: 'quantum' | 'quantum-physical';
   }> => {
-    // Try QRNG via our API proxy
-    try {
-      const response = await fetch('/api/entropy?count=100');
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          return { data: result.data, source: result.source, type: result.type };
-        }
-      }
-    } catch (e) {
-      console.warn('QRNG API failed, trying CamRNG...', e);
+    const response = await fetch('/api/entropy?count=100');
+
+    if (!response.ok) {
+      throw new Error('Quantum entropy source unavailable. Please try again.');
     }
 
-    // Fallback to CamRNG - capture multiple frames for sufficient entropy
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: 128, height: 128 },
-      });
+    const result = await response.json();
 
-      const video = document.createElement('video');
-      video.srcObject = stream;
-      video.playsInline = true;
-      await video.play();
-
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Canvas not supported');
-
-      canvas.width = 128;
-      canvas.height = 128;
-
-      const allBytes: number[] = [];
-
-      // Capture 5 frames with delays to accumulate entropy
-      for (let frame = 0; frame < 5; frame++) {
-        await new Promise(resolve => setTimeout(resolve, 50));
-        ctx.drawImage(video, 0, 0, 128, 128);
-        const imageData = ctx.getImageData(0, 0, 128, 128);
-
-        // Extract entropy from pixel values (use multiple bits, XOR frames)
-        for (let i = 0; i < imageData.data.length - 3; i += 4) {
-          // Combine RGB channels, skip alpha
-          const byte = (imageData.data[i] ^ imageData.data[i + 1] ^ imageData.data[i + 2]) & 0xFF;
-          allBytes.push(byte);
-        }
-      }
-
-      stream.getTracks().forEach(track => track.stop());
-
-      // Shuffle and take what we need
-      const shuffled = allBytes.sort(() => allBytes[0] - 128);
-      return { data: shuffled.slice(0, 200), source: 'CamRNG', type: 'quantum-physical' };
-    } catch (e) {
-      console.error('CamRNG failed:', e);
-      throw new Error(
-        'Unable to obtain quantum entropy. Please check your internet connection or enable camera access.'
-      );
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to fetch quantum entropy');
     }
+
+    return { data: result.data, source: result.source };
   }, []);
 
   const performReading = useCallback(async () => {
@@ -131,7 +84,6 @@ export default function Home() {
       setReading({
         drawnCards,
         entropySource: entropy.source,
-        entropyType: entropy.type,
         intention,
         timestamp: new Date(),
         spread: selectedSpread,
@@ -305,7 +257,7 @@ export default function Home() {
               <p className="text-sm text-text-muted font-mono">
                 {selectedSpread.name} ({selectedSpread.cardCount} cards)
               </p>
-              <EntropyIndicator source="QRNG" type="quantum" loading />
+              <EntropyIndicator source="LfD QRNG" loading />
             </div>
           </motion.div>
         )}
@@ -328,10 +280,7 @@ export default function Home() {
               {reading.intention && (
                 <p className="text-text-muted italic">&ldquo;{reading.intention}&rdquo;</p>
               )}
-              <EntropyIndicator
-                source={reading.entropySource}
-                type={reading.entropyType}
-              />
+              <EntropyIndicator source={reading.entropySource} />
             </div>
 
             {/* Card Spread - Grid Layout */}
