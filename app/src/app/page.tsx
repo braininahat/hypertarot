@@ -251,6 +251,9 @@ export default function Home() {
                 placeholder="Focus your intention... (optional)"
                 className="w-full h-24 bg-void-deep border border-violet-500/30 rounded-lg p-4 text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:border-violet-500 focus:glow-quantum resize-none"
               />
+              <p className="text-text-muted/60 text-xs">
+                Stays in your browser only. Never sent to any server.
+              </p>
             </div>
 
             {error && (
