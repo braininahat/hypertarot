@@ -98,12 +98,10 @@ export default function Home() {
     }
   }, [intention, selectedSpread, fetchQuantumEntropy]);
 
-  const copyReadingToClipboard = useCallback(async () => {
-    if (!reading) return;
+  const buildReadingMarkdown = useCallback(() => {
+    if (!reading) return '';
 
     const positions = reading.spread.positions;
-
-    // Build markdown table
     const lines = [
       '| Position | Meaning | Card |',
       '|----------|---------|------|',
@@ -117,15 +115,17 @@ export default function Home() {
       lines.push(`| ${index + 1} | ${pos.name} / ${pos.description} | ${cardName} |`);
     });
 
-    // Add intention if present
     if (reading.intention) {
       lines.unshift(`**Question:** ${reading.intention}\n`);
     }
-
-    // Add spread name
     lines.unshift(`**Spread:** ${reading.spread.name}\n`);
 
-    const markdown = lines.join('\n');
+    return lines.join('\n');
+  }, [reading]);
+
+  const copyReadingToClipboard = useCallback(async () => {
+    const markdown = buildReadingMarkdown();
+    if (!markdown) return;
 
     try {
       await navigator.clipboard.writeText(markdown);
@@ -134,7 +134,29 @@ export default function Home() {
     } catch (e) {
       console.error('Failed to copy:', e);
     }
-  }, [reading]);
+  }, [buildReadingMarkdown]);
+
+  const shareReading = useCallback(async () => {
+    const markdown = buildReadingMarkdown();
+    if (!markdown) return;
+
+    // Try native share (mobile/tablet)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'HyperTarot Reading',
+          text: markdown,
+        });
+        return;
+      } catch (e) {
+        // User cancelled or share failed, fall through to copy
+        if ((e as Error).name === 'AbortError') return;
+      }
+    }
+
+    // Fallback: copy and show confirmation
+    await copyReadingToClipboard();
+  }, [buildReadingMarkdown, copyReadingToClipboard]);
 
   const resetReading = useCallback(() => {
     setState('intention');
@@ -351,9 +373,9 @@ export default function Home() {
             </AnimatePresence>
 
             {/* Actions */}
-            <div className="flex justify-center gap-4">
+            <div className="flex justify-center gap-3 flex-wrap">
               <motion.button
-                onClick={copyReadingToClipboard}
+                onClick={shareReading}
                 className={`px-6 py-3 border rounded-lg font-display transition-all ${
                   copied
                     ? 'bg-green-600/20 border-green-500 text-green-400'
@@ -362,7 +384,7 @@ export default function Home() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.98 }}
               >
-                {copied ? 'Copied!' : 'Copy for Claude'}
+                {copied ? 'Copied!' : 'Share to Claude'}
               </motion.button>
               <motion.button
                 onClick={resetReading}
