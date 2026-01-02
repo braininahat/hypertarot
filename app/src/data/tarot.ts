@@ -106,26 +106,26 @@ export const SPREADS: Spread[] = [
   {
     id: 'relationship-reflection',
     name: 'Relationship Reflection',
-    description: 'Understanding a relationship ending: what went wrong, their experience, what you\'re learning',
+    description: 'Understanding any significant relationship: what each person brings, hidden dynamics, what it teaches',
     cardCount: 7,
     positions: [
-      { name: 'What I Brought', description: 'What you contributed to the relationship' },
-      { name: 'What They Brought', description: 'What the other person contributed' },
-      { name: 'The Dynamic', description: 'What you created together' },
-      { name: 'My Blind Spot', description: 'Where you went wrong—be honest' },
-      { name: 'Their Experience', description: 'How they experienced the ending' },
-      { name: 'The Unspoken', description: 'What they couldn\'t or didn\'t say' },
-      { name: 'The Lesson', description: 'What this relationship was teaching you' },
+      { name: 'What I Bring', description: 'What you contribute to this relationship' },
+      { name: 'What They Bring', description: 'What the other person contributes' },
+      { name: 'The Dynamic', description: 'What you create together' },
+      { name: 'My Blind Spot', description: 'What you don\'t see about yourself here' },
+      { name: 'Their Experience', description: 'How they experience you / the relationship' },
+      { name: 'The Unspoken', description: 'What remains unsaid between you' },
+      { name: 'The Lesson', description: 'What this relationship is teaching you' },
     ],
-    interpretPrompt: `Please interpret this Relationship Reflection spread for understanding a relationship that has ended.
+    interpretPrompt: `Please interpret this Relationship Reflection spread for understanding a significant relationship.
 
 Important context for interpretation:
-- Positions 1-3 map the relational field: what each person brought and what emerged between you
+- Positions 1-3 map the relational field: what each person brings and what emerges between you
 - Position 4 (My Blind Spot) requires honesty. Do not soften difficult cards—if the Five of Swords appears here, it means what it means
-- Positions 5-6 (Their Experience, The Unspoken) are not telepathy. They surface what you perceived but didn't let yourself know—patterns you registered subconsciously, things their behavior told you that you explained away. This is your own deeper read, given permission to surface
-- Position 7 reframes from loss to information: not "what did I lose" but "what was this for"
+- Positions 5-6 (Their Experience, The Unspoken) are not telepathy. They surface what you perceived but didn't let yourself fully know—patterns you registered subconsciously, things their behavior told you that you explained away. This is your own deeper read, given permission to surface
+- Position 7 asks what this relationship is here to teach—whether it's ongoing, ended, or in transition
 
-Please analyze each position with care, explore how the cards interact across the spread, and be direct about difficult truths that emerge.`,
+This spread works for romantic partners, family members, friendships, professional relationships, or any significant interpersonal dynamic. Please analyze each position with care, explore how the cards interact across the spread, and be direct about difficult truths that emerge.`,
   },
 ];
 
