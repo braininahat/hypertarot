@@ -24,6 +24,7 @@ export interface Spread {
   description: string;
   cardCount: number;
   positions: SpreadPosition[];
+  interpretPrompt: string;
 }
 
 export const SPREADS: Spread[] = [
@@ -35,6 +36,7 @@ export const SPREADS: Spread[] = [
     positions: [
       { name: 'The Card', description: 'Your message from the quantum void' },
     ],
+    interpretPrompt: 'Please interpret this single tarot card for me. What message or theme does it suggest for reflection today?',
   },
   {
     id: 'three-card',
@@ -46,6 +48,7 @@ export const SPREADS: Spread[] = [
       { name: 'Present', description: 'Your current situation' },
       { name: 'Future', description: 'Where things are heading' },
     ],
+    interpretPrompt: 'Please interpret this three-card tarot spread showing past, present, and future. How do these cards tell a story together?',
   },
   {
     id: 'five-card',
@@ -59,6 +62,7 @@ export const SPREADS: Spread[] = [
       { name: 'Future', description: 'What lies ahead' },
       { name: 'Outcome', description: 'Potential resolution' },
     ],
+    interpretPrompt: 'Please interpret this five-card cross spread. Consider how the challenge relates to my present situation, what the past reveals, and what the future and outcome suggest about my path forward.',
   },
   {
     id: 'celtic-cross',
@@ -77,6 +81,7 @@ export const SPREADS: Spread[] = [
       { name: 'Hopes & Fears', description: 'Your inner landscape' },
       { name: 'Outcome', description: 'The likely result' },
     ],
+    interpretPrompt: 'Please provide a comprehensive interpretation of this Celtic Cross tarot spread. Analyze each position, explore how the cards interact with each other, and synthesize the overall message. Pay special attention to the relationship between the challenge and the foundation, and how my hopes/fears might influence the outcome.',
   },
   {
     id: 'celtic-cross-plus',
@@ -96,6 +101,7 @@ export const SPREADS: Spread[] = [
       { name: 'Outcome', description: 'The likely result' },
       { name: 'Clarifier', description: 'Additional insight' },
     ],
+    interpretPrompt: 'Please provide a comprehensive interpretation of this Celtic Cross tarot spread with clarifier card. Analyze each position, explore how the cards interact, and pay special attention to how the Clarifier card illuminates or modifies the Outcome. What additional nuance does it bring to the reading?',
   },
 ];
 

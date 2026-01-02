@@ -102,10 +102,23 @@ export default function Home() {
     if (!reading) return '';
 
     const positions = reading.spread.positions;
-    const lines = [
-      '| Position | Meaning | Card |',
-      '|----------|---------|------|',
-    ];
+    const lines: string[] = [];
+
+    // Add interpretation prompt at the top
+    lines.push(reading.spread.interpretPrompt);
+    lines.push('');
+
+    // Add question if present
+    if (reading.intention) {
+      lines.push(`**Question:** ${reading.intention}`);
+      lines.push('');
+    }
+
+    // Add spread info and table
+    lines.push(`**Spread:** ${reading.spread.name}`);
+    lines.push('');
+    lines.push('| Position | Meaning | Card |');
+    lines.push('|----------|---------|------|');
 
     reading.drawnCards.forEach((drawn, index) => {
       const pos = positions[index];
@@ -114,11 +127,6 @@ export default function Home() {
         : drawn.card.name;
       lines.push(`| ${index + 1} | ${pos.name} / ${pos.description} | ${cardName} |`);
     });
-
-    if (reading.intention) {
-      lines.unshift(`**Question:** ${reading.intention}\n`);
-    }
-    lines.unshift(`**Spread:** ${reading.spread.name}\n`);
 
     return lines.join('\n');
   }, [reading]);
@@ -373,27 +381,33 @@ export default function Home() {
             </AnimatePresence>
 
             {/* Actions */}
-            <div className="flex justify-center gap-3 flex-wrap">
-              <motion.button
-                onClick={shareReading}
-                className={`px-6 py-3 border rounded-lg font-display transition-all ${
-                  copied
-                    ? 'bg-green-600/20 border-green-500 text-green-400'
-                    : 'bg-void-mid border-cyan-500/30 hover:border-cyan-500'
-                }`}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                {copied ? 'Copied!' : 'Share to Claude'}
-              </motion.button>
-              <motion.button
-                onClick={resetReading}
-                className="px-6 py-3 bg-void-mid border border-violet-500/30 rounded-lg font-display hover:border-violet-500 transition-all"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                New Reading
-              </motion.button>
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex justify-center gap-3 flex-wrap">
+                <motion.button
+                  onClick={shareReading}
+                  className={`px-6 py-3 border rounded-lg font-display transition-all ${
+                    copied
+                      ? 'bg-green-600/20 border-green-500 text-green-400'
+                      : 'bg-void-mid border-cyan-500/30 hover:border-cyan-500'
+                  }`}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {copied ? 'Copied!' : 'Get Interpretation'}
+                </motion.button>
+                <motion.button
+                  onClick={resetReading}
+                  className="px-6 py-3 bg-void-mid border border-violet-500/30 rounded-lg font-display hover:border-violet-500 transition-all"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  New Reading
+                </motion.button>
+              </div>
+              <p className="text-text-muted/60 text-xs text-center max-w-sm">
+                Paste into Claude, ChatGPT, or your favorite AI for interpretation.
+                Bring your own subscription — that&apos;s how we keep this free.
+              </p>
             </div>
           </motion.div>
         )}
