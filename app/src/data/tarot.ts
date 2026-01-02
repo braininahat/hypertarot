@@ -13,19 +13,96 @@ export interface DrawnCard {
   reversed: boolean;
 }
 
-export const SPREAD_POSITIONS = [
-  { name: 'Present', description: 'Your current situation' },
-  { name: 'Challenge', description: 'What crosses you' },
-  { name: 'Foundation', description: 'The root of the matter' },
-  { name: 'Past', description: 'Recent influences' },
-  { name: 'Crown', description: 'Best possible outcome' },
-  { name: 'Future', description: 'What lies ahead' },
-  { name: 'Self', description: 'Your attitude' },
-  { name: 'Environment', description: 'External influences' },
-  { name: 'Hopes & Fears', description: 'Your inner landscape' },
-  { name: 'Outcome', description: 'The likely result' },
-  { name: 'Clarifier', description: 'Additional insight' },
-] as const;
+export interface SpreadPosition {
+  name: string;
+  description: string;
+}
+
+export interface Spread {
+  id: string;
+  name: string;
+  description: string;
+  cardCount: number;
+  positions: SpreadPosition[];
+}
+
+export const SPREADS: Spread[] = [
+  {
+    id: 'single',
+    name: 'Single Card',
+    description: 'A quick insight or daily guidance',
+    cardCount: 1,
+    positions: [
+      { name: 'The Card', description: 'Your message from the quantum void' },
+    ],
+  },
+  {
+    id: 'three-card',
+    name: 'Three Card',
+    description: 'Past, Present, Future - a simple timeline',
+    cardCount: 3,
+    positions: [
+      { name: 'Past', description: 'What has led to this moment' },
+      { name: 'Present', description: 'Your current situation' },
+      { name: 'Future', description: 'Where things are heading' },
+    ],
+  },
+  {
+    id: 'five-card',
+    name: 'Five Card Cross',
+    description: 'A focused spread for specific questions',
+    cardCount: 5,
+    positions: [
+      { name: 'Present', description: 'Your current situation' },
+      { name: 'Challenge', description: 'What you face' },
+      { name: 'Past', description: 'What brought you here' },
+      { name: 'Future', description: 'What lies ahead' },
+      { name: 'Outcome', description: 'Potential resolution' },
+    ],
+  },
+  {
+    id: 'celtic-cross',
+    name: 'Celtic Cross',
+    description: 'The classic 10-card comprehensive reading',
+    cardCount: 10,
+    positions: [
+      { name: 'Present', description: 'Your current situation' },
+      { name: 'Challenge', description: 'What crosses you' },
+      { name: 'Foundation', description: 'The root of the matter' },
+      { name: 'Past', description: 'Recent influences' },
+      { name: 'Crown', description: 'Best possible outcome' },
+      { name: 'Future', description: 'What lies ahead' },
+      { name: 'Self', description: 'Your attitude' },
+      { name: 'Environment', description: 'External influences' },
+      { name: 'Hopes & Fears', description: 'Your inner landscape' },
+      { name: 'Outcome', description: 'The likely result' },
+    ],
+  },
+  {
+    id: 'celtic-cross-plus',
+    name: 'Celtic Cross + Clarifier',
+    description: 'Extended 11-card reading with additional insight',
+    cardCount: 11,
+    positions: [
+      { name: 'Present', description: 'Your current situation' },
+      { name: 'Challenge', description: 'What crosses you' },
+      { name: 'Foundation', description: 'The root of the matter' },
+      { name: 'Past', description: 'Recent influences' },
+      { name: 'Crown', description: 'Best possible outcome' },
+      { name: 'Future', description: 'What lies ahead' },
+      { name: 'Self', description: 'Your attitude' },
+      { name: 'Environment', description: 'External influences' },
+      { name: 'Hopes & Fears', description: 'Your inner landscape' },
+      { name: 'Outcome', description: 'The likely result' },
+      { name: 'Clarifier', description: 'Additional insight' },
+    ],
+  },
+];
+
+export const DEFAULT_SPREAD = SPREADS.find(s => s.id === 'celtic-cross')!;
+
+// Legacy export for backwards compatibility
+export const SPREAD_POSITIONS = DEFAULT_SPREAD.positions;
 
 export const cards: Card[] = [
   { id: 0, name: "The Fool", number: "0", arcana: "Major Arcana", suit: null, img: "m00.jpg" },

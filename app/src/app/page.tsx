@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TarotCard } from '@/components/TarotCard';
 import { EntropyIndicator } from '@/components/EntropyIndicator';
-import { cards, SPREAD_POSITIONS, type DrawnCard } from '@/data/tarot';
+import { cards, SPREADS, DEFAULT_SPREAD, type DrawnCard, type Spread } from '@/data/tarot';
 
 type AppState = 'intention' | 'drawing' | 'reading';
 
@@ -14,22 +14,25 @@ interface ReadingData {
   entropyType: 'quantum' | 'quantum-physical';
   intention: string;
   timestamp: Date;
+  spread: Spread;
 }
 
 export default function Home() {
   const [state, setState] = useState<AppState>('intention');
   const [intention, setIntention] = useState('');
+  const [selectedSpread, setSelectedSpread] = useState<Spread>(DEFAULT_SPREAD);
   const [reading, setReading] = useState<ReadingData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const fetchQuantumEntropy = useCallback(async (): Promise<{
     data: number[];
     source: string;
     type: 'quantum' | 'quantum-physical';
   }> => {
-    // Try ANU QRNG via our API proxy
+    // Try QRNG via our API proxy
     try {
       const response = await fetch('/api/entropy?count=100');
       if (response.ok) {
@@ -39,7 +42,7 @@ export default function Home() {
         }
       }
     } catch (e) {
-      console.warn('ANU QRNG failed, trying CamRNG...', e);
+      console.warn('QRNG API failed, trying CamRNG...', e);
     }
 
     // Fallback to CamRNG - capture multiple frames for sufficient entropy
@@ -96,13 +99,14 @@ export default function Home() {
 
     try {
       const entropy = await fetchQuantumEntropy();
+      const cardCount = selectedSpread.cardCount;
 
-      // Select 11 unique cards
+      // Select unique cards based on spread size
       const indices: number[] = [];
       const reversals: boolean[] = [];
       let i = 0;
 
-      while (indices.length < 11 && i < entropy.data.length) {
+      while (indices.length < cardCount && i < entropy.data.length) {
         const cardIndex = entropy.data[i] % 78;
         if (!indices.includes(cardIndex)) {
           indices.push(cardIndex);
@@ -111,7 +115,7 @@ export default function Home() {
         i++;
       }
 
-      if (indices.length < 11) {
+      if (indices.length < cardCount) {
         throw new Error('Insufficient entropy for reading');
       }
 
@@ -130,6 +134,7 @@ export default function Home() {
         entropyType: entropy.type,
         intention,
         timestamp: new Date(),
+        spread: selectedSpread,
       });
 
       setState('reading');
@@ -139,7 +144,45 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [intention, fetchQuantumEntropy]);
+  }, [intention, selectedSpread, fetchQuantumEntropy]);
+
+  const copyReadingToClipboard = useCallback(async () => {
+    if (!reading) return;
+
+    const positions = reading.spread.positions;
+
+    // Build markdown table
+    const lines = [
+      '| Position | Meaning | Card |',
+      '|----------|---------|------|',
+    ];
+
+    reading.drawnCards.forEach((drawn, index) => {
+      const pos = positions[index];
+      const cardName = drawn.reversed
+        ? `${drawn.card.name} (Reversed)`
+        : drawn.card.name;
+      lines.push(`| ${index + 1} | ${pos.name} / ${pos.description} | ${cardName} |`);
+    });
+
+    // Add intention if present
+    if (reading.intention) {
+      lines.unshift(`**Question:** ${reading.intention}\n`);
+    }
+
+    // Add spread name
+    lines.unshift(`**Spread:** ${reading.spread.name}\n`);
+
+    const markdown = lines.join('\n');
+
+    try {
+      await navigator.clipboard.writeText(markdown);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (e) {
+      console.error('Failed to copy:', e);
+    }
+  }, [reading]);
 
   const resetReading = useCallback(() => {
     setState('intention');
@@ -147,6 +190,7 @@ export default function Home() {
     setReading(null);
     setSelectedCard(null);
     setError(null);
+    setCopied(false);
   }, []);
 
   return (
@@ -173,6 +217,28 @@ export default function Home() {
                 Quantum Entropy Divination
               </p>
             </motion.div>
+
+            {/* Spread Selector */}
+            <div className="space-y-3">
+              <p className="text-text-mystic text-sm font-display">Choose your spread</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {SPREADS.map((spread) => (
+                  <button
+                    key={spread.id}
+                    onClick={() => setSelectedSpread(spread)}
+                    className={`p-3 rounded-lg border transition-all text-left ${
+                      selectedSpread.id === spread.id
+                        ? 'border-violet-500 bg-violet-500/20 glow-quantum'
+                        : 'border-violet-500/30 bg-void-deep hover:border-violet-500/60'
+                    }`}
+                  >
+                    <div className="text-sm font-display text-text-primary">{spread.name}</div>
+                    <div className="text-xs text-text-muted">{spread.cardCount} cards</div>
+                  </button>
+                ))}
+              </div>
+              <p className="text-text-muted text-xs">{selectedSpread.description}</p>
+            </div>
 
             <div className="space-y-4">
               <p className="text-text-mystic text-lg font-display">
@@ -209,7 +275,7 @@ export default function Home() {
 
             <p className="text-text-muted text-xs max-w-md mx-auto">
               Cards are drawn using true quantum randomness from vacuum fluctuations,
-              measured by lasers at the Australian National University.
+              measured by ID Quantique hardware at German LfD or Australian National University.
             </p>
           </motion.div>
         )}
@@ -233,7 +299,10 @@ export default function Home() {
               <p className="text-xl font-display text-text-mystic">
                 Drawing from the quantum void...
               </p>
-              <EntropyIndicator source="ANU QRNG" type="quantum" loading />
+              <p className="text-sm text-text-muted font-mono">
+                {selectedSpread.name} ({selectedSpread.cardCount} cards)
+              </p>
+              <EntropyIndicator source="QRNG" type="quantum" loading />
             </div>
           </motion.div>
         )}
@@ -252,6 +321,7 @@ export default function Home() {
               <h2 className="text-3xl md:text-4xl font-display font-semibold text-gradient-mystic">
                 Your Reading
               </h2>
+              <p className="text-text-muted text-sm font-mono">{reading.spread.name}</p>
               {reading.intention && (
                 <p className="text-text-muted italic">&ldquo;{reading.intention}&rdquo;</p>
               )}
@@ -262,7 +332,12 @@ export default function Home() {
             </div>
 
             {/* Card Spread - Grid Layout */}
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 md:gap-4 justify-items-center items-start">
+            <div className={`grid gap-3 md:gap-4 justify-items-center items-start ${
+              reading.spread.cardCount === 1 ? 'grid-cols-1 max-w-xs mx-auto' :
+              reading.spread.cardCount <= 3 ? 'grid-cols-3 max-w-md mx-auto' :
+              reading.spread.cardCount <= 5 ? 'grid-cols-3 sm:grid-cols-5 max-w-2xl mx-auto' :
+              'grid-cols-3 sm:grid-cols-4 md:grid-cols-6'
+            }`}>
               {reading.drawnCards.map((drawn, index) => (
                 <motion.div
                   key={drawn.card.id}
@@ -273,7 +348,7 @@ export default function Home() {
                 >
                   <div className="text-center mb-2">
                     <span className="text-[10px] md:text-xs text-text-muted font-mono">
-                      {SPREAD_POSITIONS[index]?.name || `Card ${index + 1}`}
+                      {reading.spread.positions[index]?.name || `Card ${index + 1}`}
                     </span>
                   </div>
                   <TarotCard
@@ -282,7 +357,7 @@ export default function Home() {
                     revealed={true}
                     delay={index * 0.15}
                     onClick={() => setSelectedCard(selectedCard === index ? null : index)}
-                    size="sm"
+                    size={reading.spread.cardCount <= 3 ? 'md' : 'sm'}
                   />
                   {drawn.reversed && (
                     <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] md:text-[10px] text-violet-400 font-mono">
@@ -314,10 +389,10 @@ export default function Home() {
                       ` - ${reading.drawnCards[selectedCard].card.suit}`}
                   </p>
                   <p className="text-cyan-400 text-sm font-mono">
-                    Position: {SPREAD_POSITIONS[selectedCard]?.name}
+                    Position: {reading.spread.positions[selectedCard]?.name}
                   </p>
                   <p className="text-text-muted text-xs mt-1">
-                    {SPREAD_POSITIONS[selectedCard]?.description}
+                    {reading.spread.positions[selectedCard]?.description}
                   </p>
                 </motion.div>
               )}
@@ -325,6 +400,18 @@ export default function Home() {
 
             {/* Actions */}
             <div className="flex justify-center gap-4">
+              <motion.button
+                onClick={copyReadingToClipboard}
+                className={`px-6 py-3 border rounded-lg font-display transition-all ${
+                  copied
+                    ? 'bg-green-600/20 border-green-500 text-green-400'
+                    : 'bg-void-mid border-cyan-500/30 hover:border-cyan-500'
+                }`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                {copied ? 'Copied!' : 'Copy for Claude'}
+              </motion.button>
               <motion.button
                 onClick={resetReading}
                 className="px-6 py-3 bg-void-mid border border-violet-500/30 rounded-lg font-display hover:border-violet-500 transition-all"
@@ -346,12 +433,12 @@ export default function Home() {
         className="fixed bottom-4 text-center text-text-muted text-xs font-mono"
       >
         <a
-          href="https://qrng.anu.edu.au/"
+          href="https://lfdr.de/QRNG/"
           target="_blank"
           rel="noopener noreferrer"
           className="hover:text-cyan-400 transition-colors"
         >
-          Powered by ANU Quantum Random Numbers
+          Powered by Quantum Random Numbers
         </a>
       </motion.footer>
     </main>
