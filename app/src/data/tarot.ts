@@ -103,6 +103,30 @@ export const SPREADS: Spread[] = [
     ],
     interpretPrompt: 'Please provide a comprehensive interpretation of this Celtic Cross tarot spread with clarifier card. Analyze each position, explore how the cards interact, and pay special attention to how the Clarifier card illuminates or modifies the Outcome. What additional nuance does it bring to the reading?',
   },
+  {
+    id: 'relationship-reflection',
+    name: 'Relationship Reflection',
+    description: 'Understanding a relationship ending: what went wrong, their experience, what you\'re learning',
+    cardCount: 7,
+    positions: [
+      { name: 'What I Brought', description: 'What you contributed to the relationship' },
+      { name: 'What They Brought', description: 'What the other person contributed' },
+      { name: 'The Dynamic', description: 'What you created together' },
+      { name: 'My Blind Spot', description: 'Where you went wrong—be honest' },
+      { name: 'Their Experience', description: 'How they experienced the ending' },
+      { name: 'The Unspoken', description: 'What they couldn\'t or didn\'t say' },
+      { name: 'The Lesson', description: 'What this relationship was teaching you' },
+    ],
+    interpretPrompt: `Please interpret this Relationship Reflection spread for understanding a relationship that has ended.
+
+Important context for interpretation:
+- Positions 1-3 map the relational field: what each person brought and what emerged between you
+- Position 4 (My Blind Spot) requires honesty. Do not soften difficult cards—if the Five of Swords appears here, it means what it means
+- Positions 5-6 (Their Experience, The Unspoken) are not telepathy. They surface what you perceived but didn't let yourself know—patterns you registered subconsciously, things their behavior told you that you explained away. This is your own deeper read, given permission to surface
+- Position 7 reframes from loss to information: not "what did I lose" but "what was this for"
+
+Please analyze each position with care, explore how the cards interact across the spread, and be direct about difficult truths that emerge.`,
+  },
 ];
 
 export const DEFAULT_SPREAD = SPREADS.find(s => s.id === 'celtic-cross')!;
