@@ -52,11 +52,10 @@ The app should feel like **stepping through a portal**—from the mundane into t
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                   QRNG SERVICE LAYER                             │
-│   Abstracted entropy provider with fallback chain               │
-│   ├── Primary: ANU QRNG                                         │
-│   ├── Fallback 1: API3 QRNG (if Web3 enabled)                  │
-│   ├── Fallback 2: Camera entropy (CamRNG)                       │
-│   └── Fallback 3: Crypto.getRandomValues (CSPRNG)              │
+│   Quantum-only entropy with fallback chain                      │
+│   ├── Primary: ANU QRNG (vacuum fluctuations)                   │
+│   ├── Fallback: CamRNG (sensor shot/thermal noise)              │
+│   └── No CSPRNG — fail if no quantum source available           │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -142,36 +141,36 @@ async function getCameraEntropy(bytes = 11) {
 }
 ```
 
-### Fallback 3: Web Crypto API (CSPRNG)
+### No CSPRNG Fallback
 
-Last resort—cryptographically secure but not quantum.
+We intentionally **do not** fall back to `crypto.getRandomValues()` or any pseudo-random source. While cryptographically secure, CSPRNG is deterministic—given the same internal state, it produces the same output. This violates the core Fatum premise that consciousness may influence quantum superposition states.
 
-```javascript
-function getCryptoRandom(count = 11) {
-  const array = new Uint8Array(count);
-  crypto.getRandomValues(array);
-  return Array.from(array).map(n => n % 78);
-}
-```
+If both ANU and CamRNG fail, the app displays an error rather than compromising on entropy quality.
 
 ### Entropy Provider Strategy
+
+**No pseudo-random fallbacks.** If we can't get quantum entropy, the reading fails. This preserves the integrity of the Fatum philosophy—deterministic algorithms cannot be influenced by intention.
 
 ```typescript
 interface EntropyProvider {
   name: string;
-  isQuantum: boolean;
+  type: 'quantum' | 'quantum-physical'; // No 'pseudo' allowed
   priority: number;
   getEntropy(count: number): Promise<number[]>;
   healthCheck(): Promise<boolean>;
 }
 
 class EntropyService {
-  private providers: EntropyProvider[];
+  private providers: EntropyProvider[] = [
+    { name: 'ANU QRNG', type: 'quantum', priority: 1, ... },
+    { name: 'CamRNG', type: 'quantum-physical', priority: 2, ... },
+    // NO Web Crypto / CSPRNG fallback
+  ];
 
   async getCardIndices(count: number = 11): Promise<{
     indices: number[];
     source: string;
-    isQuantum: boolean;
+    type: 'quantum' | 'quantum-physical';
   }> {
     for (const provider of this.providers.sort((a, b) => a.priority - b.priority)) {
       try {
@@ -180,14 +179,17 @@ class EntropyService {
           return {
             indices: entropy.map(n => n % 78),
             source: provider.name,
-            isQuantum: provider.isQuantum
+            type: provider.type
           };
         }
       } catch (e) {
         console.warn(`Provider ${provider.name} failed, trying next...`);
       }
     }
-    throw new Error('All entropy providers failed');
+    // No fallback - fail with meaningful message
+    throw new Error(
+      'Unable to obtain quantum entropy. Please check your connection or enable camera access.'
+    );
   }
 }
 ```
