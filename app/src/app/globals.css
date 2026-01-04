@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+:root {
+  /* Backgrounds - Deep space void */
+  --void-deepest: #0a0a0f;
+  --void-deep: #12121a;
+  --void-mid: #1a1a25;
+
+  /* Accents - Quantum glow */
+  --quantum-primary: #7c3aed;
+  --quantum-secondary: #06b6d4;
+  --quantum-tertiary: #f59e0b;
+
+  /* Text */
+  --text-primary: #f4f4f5;
+  --text-muted: #a1a1aa;
+  --text-mystic: #c4b5fd;
+
+  /* Effects */
+  --glow-quantum: 0 0 30px rgba(124, 58, 237, 0.3);
+  --glow-reveal: 0 0 60px rgba(245, 158, 11, 0.5);
+}
+
+@theme inline {
+  --color-void-deepest: var(--void-deepest);
+  --color-void-deep: var(--void-deep);
+  --color-void-mid: var(--void-mid);
+  --color-quantum-primary: var(--quantum-primary);
+  --color-quantum-secondary: var(--quantum-secondary);
+  --color-quantum-tertiary: var(--quantum-tertiary);
+  --color-text-primary: var(--text-primary);
+  --color-text-muted: var(--text-muted);
+  --color-text-mystic: var(--text-mystic);
+}
+
+body {
+  background: var(--void-deepest);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+/* Font utilities */
+.font-display {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* Quantum glow effect */
+.glow-quantum {
+  box-shadow: var(--glow-quantum);
+}
+
+.glow-reveal {
+  box-shadow: var(--glow-reveal);
+}
+
+/* Breathing animation for intention screen */
+@keyframes breathe {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.02); }
+}
+
+.animate-breathe {
+  animation: breathe 4s ease-in-out infinite;
+}
+
+/* Card flip animation */
+@keyframes cardReveal {
+  0% { transform: rotateY(180deg); opacity: 0; }
+  100% { transform: rotateY(0deg); opacity: 1; }
+}
+
+.animate-card-reveal {
+  animation: cardReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Entropy stream animation */
+@keyframes streamIn {
+  0% { transform: translateX(-20px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+.animate-stream {
+  animation: streamIn 0.3s ease-out forwards;
+}
+
+/* Gradient text for mystic headings */
+.text-gradient-mystic {
+  background: linear-gradient(135deg, var(--quantum-primary), var(--quantum-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Star field background */
+.bg-starfield {
+  background-image:
+    radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,0.3), transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.2), transparent),
+    radial-gradient(1px 1px at 90px 40px, rgba(255,255,255,0.4), transparent),
+    radial-gradient(2px 2px at 130px 80px, rgba(255,255,255,0.2), transparent),
+    radial-gradient(1px 1px at 160px 120px, rgba(255,255,255,0.3), transparent);
+  background-size: 200px 200px;
+}
