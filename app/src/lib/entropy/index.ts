@@ -1,8 +1,10 @@
 import { EntropyProvider, EntropyResult } from './types';
 import { anuProvider } from './anu';
 import { cameraProvider } from './camera';
+import { selectCards, entropyBytesNeeded } from './selection';
 
 export type { EntropyResult, EntropyType } from './types';
+export { DECK_SIZE, REVERSAL_THRESHOLD } from './constants';
 
 const providers: EntropyProvider[] = [
   anuProvider,
@@ -45,29 +47,11 @@ export class EntropyService {
     type: 'quantum' | 'quantum-physical';
     reversals: boolean[];
   }> {
-    const entropy = await this.getEntropy(count * 3); // Extra for uniqueness + reversals
+    const bytesNeeded = entropyBytesNeeded(count);
+    const entropy = await this.getEntropy(bytesNeeded);
 
-    // Select unique card indices (0-77)
-    const indices: number[] = [];
-    const reversals: boolean[] = [];
-    let entropyIndex = 0;
-
-    while (indices.length < count && entropyIndex < entropy.values.length) {
-      const cardIndex = entropy.values[entropyIndex] % 78;
-
-      if (!indices.includes(cardIndex)) {
-        indices.push(cardIndex);
-        // Use next entropy value for reversal (>127 = reversed)
-        const reversalValue = entropy.values[entropyIndex + 1] ?? entropy.values[entropyIndex];
-        reversals.push(reversalValue > 127);
-      }
-
-      entropyIndex++;
-    }
-
-    if (indices.length < count) {
-      throw new Error('Not enough entropy to generate unique cards');
-    }
+    // Fisher-Yates selection: guarantees uniqueness, no bias
+    const { indices, reversals } = selectCards(entropy.values, count);
 
     return {
       indices,
