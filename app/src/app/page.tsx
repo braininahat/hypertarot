@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { TarotCard } from '@/components/TarotCard';
 import { EntropyIndicator } from '@/components/EntropyIndicator';
 import { cards, SPREADS, DEFAULT_SPREAD, type DrawnCard, type Spread } from '@/data/tarot';
+import { selectCards, entropyBytesNeeded } from '@/lib/entropy/selection';
 
 type AppState = 'intention' | 'drawing' | 'reading';
 
@@ -315,11 +316,12 @@ export default function Home() {
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const fetchQuantumEntropy = useCallback(async (): Promise<{
+  const fetchQuantumEntropy = useCallback(async (cardCount: number): Promise<{
     data: number[];
     source: string;
   }> => {
-    const response = await fetch('/api/entropy?count=100');
+    const bytesNeeded = entropyBytesNeeded(cardCount);
+    const response = await fetch(`/api/entropy?count=${bytesNeeded}`);
 
     if (!response.ok) {
       throw new Error('Quantum entropy source unavailable. Please try again.');
@@ -340,26 +342,11 @@ export default function Home() {
     setState('drawing');
 
     try {
-      const entropy = await fetchQuantumEntropy();
       const cardCount = selectedSpread.cardCount;
+      const entropy = await fetchQuantumEntropy(cardCount);
 
-      // Select unique cards based on spread size
-      const indices: number[] = [];
-      const reversals: boolean[] = [];
-      let i = 0;
-
-      while (indices.length < cardCount && i < entropy.data.length) {
-        const cardIndex = entropy.data[i] % 78;
-        if (!indices.includes(cardIndex)) {
-          indices.push(cardIndex);
-          reversals.push((entropy.data[i + 1] || entropy.data[i]) > 127);
-        }
-        i++;
-      }
-
-      if (indices.length < cardCount) {
-        throw new Error('Insufficient entropy for reading');
-      }
+      // Fisher-Yates selection: guarantees uniqueness, no modulo bias
+      const { indices, reversals } = selectCards(entropy.data, cardCount);
 
       const drawnCards: DrawnCard[] = indices.map((cardIndex, position) => ({
         card: cards[cardIndex],
