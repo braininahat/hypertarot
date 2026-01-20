@@ -112,6 +112,23 @@ function SpreadDiagram({ spreadId, selected }: { spreadId: string; selected: boo
         </div>
       );
 
+    case 'right-hand-of-eris':
+      return (
+        <div className="flex flex-col items-center gap-0.5">
+          {/* Top row: Help - Question - Hinder (like fingers) */}
+          <div className="flex items-center gap-1">
+            <MiniCard highlight={highlight} />
+            <MiniCard highlight={highlight} />
+            <MiniCard highlight={highlight} />
+          </div>
+          {/* Bottom row: Two outcomes */}
+          <div className="flex items-center gap-2">
+            <MiniCard highlight={highlight} />
+            <MiniCard highlight={highlight} />
+          </div>
+        </div>
+      );
+
     default:
       return (
         <div className="flex items-center gap-0.5">
@@ -291,6 +308,23 @@ function SpreadLayout({ drawnCards, positions, spreadId, selectedCard, setSelect
           </div>
           {/* Row 4: The Lesson */}
           <CardSlot {...slotProps(6)} />
+        </div>
+      );
+
+    case 'right-hand-of-eris':
+      return (
+        <div className="flex flex-col items-center gap-4">
+          {/* Top row: What May Help - Your Question - What May Hinder */}
+          <div className="flex justify-center items-start gap-3 md:gap-4">
+            <CardSlot {...slotProps(1)} />
+            <CardSlot {...slotProps(0)} />
+            <CardSlot {...slotProps(2)} />
+          </div>
+          {/* Bottom row: Two Outcomes */}
+          <div className="flex justify-center items-start gap-6 md:gap-8">
+            <CardSlot {...slotProps(3)} />
+            <CardSlot {...slotProps(4)} />
+          </div>
         </div>
       );
 
