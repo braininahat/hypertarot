@@ -6,19 +6,26 @@
   --void-deep: #12121a;
   --void-mid: #1a1a25;
 
-  /* Accents - Quantum glow */
+  /* Accents - Quantum glow (Tarot) */
   --quantum-primary: #7c3aed;
   --quantum-secondary: #06b6d4;
   --quantum-tertiary: #f59e0b;
+
+  /* Accents - I Ching */
+  --iching-primary: #d97706;
+  --iching-secondary: #ea580c;
+  --iching-tertiary: #fbbf24;
 
   /* Text */
   --text-primary: #f4f4f5;
   --text-muted: #a1a1aa;
   --text-mystic: #c4b5fd;
+  --text-iching: #fcd34d;
 
   /* Effects */
   --glow-quantum: 0 0 30px rgba(124, 58, 237, 0.3);
   --glow-reveal: 0 0 60px rgba(245, 158, 11, 0.5);
+  --glow-iching: 0 0 30px rgba(217, 119, 6, 0.3);
 }
 
 @theme inline {
@@ -28,9 +35,13 @@
   --color-quantum-primary: var(--quantum-primary);
   --color-quantum-secondary: var(--quantum-secondary);
   --color-quantum-tertiary: var(--quantum-tertiary);
+  --color-iching-primary: var(--iching-primary);
+  --color-iching-secondary: var(--iching-secondary);
+  --color-iching-tertiary: var(--iching-tertiary);
   --color-text-primary: var(--text-primary);
   --color-text-muted: var(--text-muted);
   --color-text-mystic: var(--text-mystic);
+  --color-text-iching: var(--text-iching);
 }
 
 body {
@@ -49,9 +60,14 @@ body {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
 }
 
-/* Quantum glow effect */
+/* Quantum glow effect (Tarot) */
 .glow-quantum {
   box-shadow: var(--glow-quantum);
+}
+
+/* I Ching glow effect */
+.glow-iching {
+  box-shadow: var(--glow-iching);
 }
 
 .glow-reveal {
@@ -88,9 +104,17 @@ body {
   animation: streamIn 0.3s ease-out forwards;
 }
 
-/* Gradient text for mystic headings */
+/* Gradient text for mystic headings (Tarot) */
 .text-gradient-mystic {
   background: linear-gradient(135deg, var(--quantum-primary), var(--quantum-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Gradient text for I Ching headings */
+.text-gradient-iching {
+  background: linear-gradient(135deg, var(--iching-primary), var(--iching-tertiary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
