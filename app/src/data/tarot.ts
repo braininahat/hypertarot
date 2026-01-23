@@ -127,6 +127,28 @@ Important context for interpretation:
 
 This spread works for romantic partners, family members, friendships, professional relationships, or any significant interpersonal dynamic. Please analyze each position with care, explore how the cards interact across the spread, and be direct about difficult truths that emerge.`,
   },
+  {
+    id: 'right-hand-of-eris',
+    name: 'Right Hand of Eris',
+    description: 'Decision-making spread: understand your question, what helps and hinders, and choose between two possible outcomes',
+    cardCount: 5,
+    positions: [
+      { name: 'Your Question', description: 'The heart of what you\'re asking about' },
+      { name: 'What May Help', description: 'Forces, resources, or attitudes working in your favor' },
+      { name: 'What May Hinder', description: 'Obstacles, resistances, or blind spots to watch for' },
+      { name: 'Outcome One', description: 'One possible path forward' },
+      { name: 'Outcome Two', description: 'Another possible path forward' },
+    ],
+    interpretPrompt: `Please interpret this Right Hand of Eris spread, a chaos magick divination tool for decision-making.
+
+Important context for interpretation:
+- Position 1 (Your Question) reveals the true nature of what's being asked—which may differ from how the querent framed it
+- Position 2 (What May Help) shows resources, allies, attitudes, or circumstances that support movement forward
+- Position 3 (What May Hinder) reveals obstacles, shadow aspects, or resistances—be direct about difficult cards here
+- Positions 4 and 5 (Outcome One and Two) show two possible futures. Neither is inherently "better"—they represent different paths with different costs and rewards
+
+After interpreting each position, help the querent understand what distinguishes the two outcomes and what choosing each might require of them. This is not about predicting which will happen, but about illuminating the choice.`,
+  },
 ];
 
 export const DEFAULT_SPREAD = SPREADS.find(s => s.id === 'celtic-cross')!;
