@@ -3,19 +3,35 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TarotCard } from '@/components/TarotCard';
+import { Hexagram, HexagramReadingDisplay, HexagramDetail, MiniHexagram } from '@/components/Hexagram';
 import { EntropyIndicator } from '@/components/EntropyIndicator';
 import { cards, SPREADS, DEFAULT_SPREAD, type DrawnCard, type Spread } from '@/data/tarot';
+import { ICHING_SPREADS, DEFAULT_ICHING_SPREAD, HEXAGRAMS, getHexagramByNumber, type IChing_Spread, type Hexagram as HexagramType } from '@/data/iching';
 import { selectCards, entropyBytesNeeded } from '@/lib/entropy/selection';
+import { castHexagrams, ichingEntropyBytesNeeded } from '@/lib/entropy/iching-selection';
+import { DivinationSystem, HexagramCast, CastLine } from '@/lib/entropy/types';
 
 type AppState = 'intention' | 'drawing' | 'reading';
 
-interface ReadingData {
+interface TarotReadingData {
+  type: 'tarot';
   drawnCards: DrawnCard[];
   entropySource: string;
   intention: string;
   timestamp: Date;
   spread: Spread;
 }
+
+interface IChingReadingData {
+  type: 'iching';
+  casts: HexagramCast[];
+  entropySource: string;
+  intention: string;
+  timestamp: Date;
+  spread: IChing_Spread;
+}
+
+type ReadingData = TarotReadingData | IChingReadingData;
 
 // Mini card visualization for spread picker
 function MiniCard({ className = '', highlight = false }: { className?: string; highlight?: boolean }) {
@@ -342,12 +358,16 @@ function SpreadLayout({ drawnCards, positions, spreadId, selectedCard, setSelect
 
 export default function Home() {
   const [state, setState] = useState<AppState>('intention');
+  const [divinationSystem, setDivinationSystem] = useState<DivinationSystem>('tarot');
   const [intention, setIntention] = useState('');
   const [selectedSpread, setSelectedSpread] = useState<Spread>(DEFAULT_SPREAD);
+  const [selectedIChingSpread, setSelectedIChingSpread] = useState<IChing_Spread>(DEFAULT_ICHING_SPREAD);
   const [reading, setReading] = useState<ReadingData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
+  const [selectedHexagram, setSelectedHexagram] = useState<'primary' | 'transformed' | null>(null);
+  const [selectedCastIndex, setSelectedCastIndex] = useState<number>(0);
   const [copied, setCopied] = useState(false);
 
   const fetchQuantumEntropy = useCallback(async (cardCount: number): Promise<{
@@ -376,28 +396,60 @@ export default function Home() {
     setState('drawing');
 
     try {
-      const cardCount = selectedSpread.cardCount;
-      const entropy = await fetchQuantumEntropy(cardCount);
+      if (divinationSystem === 'tarot') {
+        const cardCount = selectedSpread.cardCount;
+        const entropy = await fetchQuantumEntropy(cardCount);
 
-      // Fisher-Yates selection: guarantees uniqueness, no modulo bias
-      const { indices, reversals } = selectCards(entropy.data, cardCount);
+        // Fisher-Yates selection: guarantees uniqueness, no modulo bias
+        const { indices, reversals } = selectCards(entropy.data, cardCount);
 
-      const drawnCards: DrawnCard[] = indices.map((cardIndex, position) => ({
-        card: cards[cardIndex],
-        position,
-        reversed: reversals[position],
-      }));
+        const drawnCards: DrawnCard[] = indices.map((cardIndex, position) => ({
+          card: cards[cardIndex],
+          position,
+          reversed: reversals[position],
+        }));
 
-      // Dramatic pause for the drawing experience
-      await new Promise(resolve => setTimeout(resolve, 1500));
+        // Dramatic pause for the drawing experience
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
-      setReading({
-        drawnCards,
-        entropySource: entropy.source,
-        intention,
-        timestamp: new Date(),
-        spread: selectedSpread,
-      });
+        setReading({
+          type: 'tarot',
+          drawnCards,
+          entropySource: entropy.source,
+          intention,
+          timestamp: new Date(),
+          spread: selectedSpread,
+        });
+      } else {
+        // I Ching reading
+        const hexagramCount = selectedIChingSpread.id === 'single-hexagram' ? 1 :
+                             selectedIChingSpread.id === 'past-future' ? 2 : 3;
+        const bytesNeeded = ichingEntropyBytesNeeded(hexagramCount);
+        const response = await fetch(`/api/entropy?count=${bytesNeeded}`);
+
+        if (!response.ok) {
+          throw new Error('Quantum entropy source unavailable. Please try again.');
+        }
+
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to fetch quantum entropy');
+        }
+
+        const { casts } = castHexagrams(result.data, hexagramCount);
+
+        // Dramatic pause for the casting experience
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        setReading({
+          type: 'iching',
+          casts,
+          entropySource: result.source,
+          intention,
+          timestamp: new Date(),
+          spread: selectedIChingSpread,
+        });
+      }
 
       setState('reading');
     } catch (e) {
@@ -406,12 +458,11 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [intention, selectedSpread, fetchQuantumEntropy]);
+  }, [intention, selectedSpread, selectedIChingSpread, divinationSystem, fetchQuantumEntropy]);
 
   const buildReadingMarkdown = useCallback(() => {
     if (!reading) return '';
 
-    const positions = reading.spread.positions;
     const lines: string[] = [];
 
     // Add interpretation prompt at the top
@@ -424,19 +475,69 @@ export default function Home() {
       lines.push('');
     }
 
-    // Add spread info and table
-    lines.push(`**Spread:** ${reading.spread.name}`);
-    lines.push('');
-    lines.push('| Position | Meaning | Card |');
-    lines.push('|----------|---------|------|');
+    if (reading.type === 'tarot') {
+      const positions = reading.spread.positions;
 
-    reading.drawnCards.forEach((drawn, index) => {
-      const pos = positions[index];
-      const cardName = drawn.reversed
-        ? `${drawn.card.name} (Reversed)`
-        : drawn.card.name;
-      lines.push(`| ${index + 1} | ${pos.name} / ${pos.description} | ${cardName} |`);
-    });
+      // Add spread info and table
+      lines.push(`**Spread:** ${reading.spread.name}`);
+      lines.push('');
+      lines.push('| Position | Meaning | Card |');
+      lines.push('|----------|---------|------|');
+
+      reading.drawnCards.forEach((drawn, index) => {
+        const pos = positions[index];
+        const cardName = drawn.reversed
+          ? `${drawn.card.name} (Reversed)`
+          : drawn.card.name;
+        lines.push(`| ${index + 1} | ${pos.name} / ${pos.description} | ${cardName} |`);
+      });
+    } else {
+      // I Ching reading
+      lines.push(`**Method:** ${reading.spread.name}`);
+      lines.push('');
+
+      reading.casts.forEach((cast, castIndex) => {
+        const hexagram = getHexagramByNumber(cast.hexagramNumber);
+        if (!hexagram) return;
+
+        const castLabel = reading.casts.length === 1 ? '' :
+                         reading.casts.length === 2 ? (castIndex === 0 ? '### Past' : '### Future') :
+                         `### Aspect ${castIndex + 1}`;
+
+        if (castLabel) {
+          lines.push(castLabel);
+          lines.push('');
+        }
+
+        lines.push(`**Primary Hexagram:** ${cast.hexagramNumber}. ${hexagram.name} (${hexagram.chinese} ${hexagram.pinyin})`);
+        lines.push('');
+        lines.push(`*Judgment:* ${hexagram.judgment}`);
+        lines.push('');
+        lines.push(`*Image:* ${hexagram.image}`);
+        lines.push('');
+
+        // Changing lines
+        const changingLineNumbers = cast.lines
+          .map((line, i) => line.isChanging ? i + 1 : null)
+          .filter(Boolean);
+
+        if (changingLineNumbers.length > 0) {
+          lines.push(`**Changing Lines:** ${changingLineNumbers.join(', ')}`);
+          lines.push('');
+        }
+
+        // Transformed hexagram
+        if (cast.transformedHexagramNumber) {
+          const transformed = getHexagramByNumber(cast.transformedHexagramNumber);
+          if (transformed) {
+            lines.push(`**Transforms to:** ${transformed.number}. ${transformed.name} (${transformed.chinese} ${transformed.pinyin})`);
+            lines.push('');
+            lines.push(`*Judgment:* ${transformed.judgment}`);
+            lines.push('');
+          }
+        }
+      });
+    }
 
     return lines.join('\n');
   }, [reading]);
@@ -481,6 +582,8 @@ export default function Home() {
     setIntention('');
     setReading(null);
     setSelectedCard(null);
+    setSelectedHexagram(null);
+    setSelectedCastIndex(0);
     setError(null);
     setCopied(false);
   }, []);
@@ -503,39 +606,115 @@ export default function Home() {
               animate={{ scale: 1 }}
             >
               <h1 className="text-5xl md:text-6xl font-display font-semibold text-gradient-mystic mb-4">
-                HyperTarot
+                {divinationSystem === 'tarot' ? 'HyperTarot' : 'HyperOracle'}
               </h1>
               <p className="text-text-muted text-sm font-mono">
                 Quantum Entropy Divination
               </p>
             </motion.div>
 
+            {/* Divination System Toggle */}
+            <div className="flex justify-center">
+              <div className="inline-flex rounded-lg border border-violet-500/30 p-1 bg-void-deep">
+                <button
+                  onClick={() => setDivinationSystem('tarot')}
+                  className={`px-4 py-2 rounded-md text-sm font-display transition-all ${
+                    divinationSystem === 'tarot'
+                      ? 'bg-violet-600 text-white'
+                      : 'text-text-muted hover:text-text-primary'
+                  }`}
+                >
+                  Tarot
+                </button>
+                <button
+                  onClick={() => setDivinationSystem('iching')}
+                  className={`px-4 py-2 rounded-md text-sm font-display transition-all ${
+                    divinationSystem === 'iching'
+                      ? 'bg-amber-600 text-white'
+                      : 'text-text-muted hover:text-text-primary'
+                  }`}
+                >
+                  I Ching
+                </button>
+              </div>
+            </div>
+
             {/* Spread Selector */}
             <div className="space-y-4">
-              <p className="text-text-mystic text-sm font-display">Choose your spread</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {SPREADS.map((spread) => (
-                  <button
-                    key={spread.id}
-                    onClick={() => setSelectedSpread(spread)}
-                    className={`p-3 rounded-lg border transition-all flex flex-col items-center gap-2 ${
-                      selectedSpread.id === spread.id
-                        ? 'border-violet-500 bg-violet-500/20 glow-quantum'
-                        : 'border-violet-500/30 bg-void-deep hover:border-violet-500/60'
-                    }`}
-                  >
-                    {/* Mini spread visualization */}
-                    <div className="h-12 flex items-center justify-center">
-                      <SpreadDiagram spreadId={spread.id} selected={selectedSpread.id === spread.id} />
-                    </div>
-                    <div className="text-center">
-                      <div className="text-sm font-display text-text-primary">{spread.name}</div>
-                      <div className="text-[10px] text-text-muted">{spread.cardCount} cards</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-              <p className="text-text-muted text-xs text-center max-w-sm mx-auto">{selectedSpread.description}</p>
+              <p className="text-text-mystic text-sm font-display">
+                {divinationSystem === 'tarot' ? 'Choose your spread' : 'Choose your method'}
+              </p>
+
+              {divinationSystem === 'tarot' ? (
+                <>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {SPREADS.map((spread) => (
+                      <button
+                        key={spread.id}
+                        onClick={() => setSelectedSpread(spread)}
+                        className={`p-3 rounded-lg border transition-all flex flex-col items-center gap-2 ${
+                          selectedSpread.id === spread.id
+                            ? 'border-violet-500 bg-violet-500/20 glow-quantum'
+                            : 'border-violet-500/30 bg-void-deep hover:border-violet-500/60'
+                        }`}
+                      >
+                        {/* Mini spread visualization */}
+                        <div className="h-12 flex items-center justify-center">
+                          <SpreadDiagram spreadId={spread.id} selected={selectedSpread.id === spread.id} />
+                        </div>
+                        <div className="text-center">
+                          <div className="text-sm font-display text-text-primary">{spread.name}</div>
+                          <div className="text-[10px] text-text-muted">{spread.cardCount} cards</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-text-muted text-xs text-center max-w-sm mx-auto">{selectedSpread.description}</p>
+                </>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {ICHING_SPREADS.map((spread) => (
+                      <button
+                        key={spread.id}
+                        onClick={() => setSelectedIChingSpread(spread)}
+                        className={`p-3 rounded-lg border transition-all flex flex-col items-center gap-2 ${
+                          selectedIChingSpread.id === spread.id
+                            ? 'border-amber-500 bg-amber-500/20 glow-iching'
+                            : 'border-amber-500/30 bg-void-deep hover:border-amber-500/60'
+                        }`}
+                      >
+                        {/* Mini hexagram visualization */}
+                        <div className="h-12 flex items-center justify-center text-amber-400">
+                          <MiniHexagram />
+                          {spread.id === 'past-future' && (
+                            <>
+                              <span className="mx-2 text-amber-500/50">→</span>
+                              <MiniHexagram />
+                            </>
+                          )}
+                          {spread.id === 'three-coins' && (
+                            <>
+                              <span className="mx-1 text-amber-500/50">·</span>
+                              <MiniHexagram />
+                              <span className="mx-1 text-amber-500/50">·</span>
+                              <MiniHexagram />
+                            </>
+                          )}
+                        </div>
+                        <div className="text-center">
+                          <div className="text-sm font-display text-text-primary">{spread.name}</div>
+                          <div className="text-[10px] text-text-muted">
+                            {spread.id === 'single-hexagram' ? '1 hexagram' :
+                             spread.id === 'past-future' ? '2 hexagrams' : '3 hexagrams'}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-text-muted text-xs text-center max-w-sm mx-auto">{selectedIChingSpread.description}</p>
+                </>
+              )}
             </div>
 
             <div className="space-y-4">
@@ -547,10 +726,14 @@ export default function Home() {
                 value={intention}
                 onChange={e => setIntention(e.target.value)}
                 placeholder="Focus your intention... (optional)"
-                className="w-full h-24 bg-void-deep border border-violet-500/30 rounded-lg p-4 text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:border-violet-500 focus:glow-quantum resize-none"
+                className={`w-full h-24 bg-void-deep border rounded-lg p-4 text-text-primary placeholder:text-text-muted/50 focus:outline-none resize-none ${
+                  divinationSystem === 'tarot'
+                    ? 'border-violet-500/30 focus:border-violet-500 focus:glow-quantum'
+                    : 'border-amber-500/30 focus:border-amber-500 focus:glow-iching'
+                }`}
               />
               <p className="text-text-muted/60 text-xs">
-                For your reflection only. Never sent anywhere or used in card selection.
+                For your reflection only. Never sent anywhere or used in {divinationSystem === 'tarot' ? 'card selection' : 'the casting'}.
               </p>
             </div>
 
@@ -567,15 +750,19 @@ export default function Home() {
             <motion.button
               onClick={performReading}
               disabled={loading}
-              className="px-8 py-4 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-lg text-lg font-display font-semibold hover:from-violet-500 hover:to-indigo-500 transition-all glow-quantum disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`px-8 py-4 rounded-lg text-lg font-display font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                divinationSystem === 'tarot'
+                  ? 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 glow-quantum'
+                  : 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 glow-iching'
+              }`}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.98 }}
             >
-              {loading ? 'Channeling Entropy...' : 'Draw the Cards'}
+              {loading ? 'Channeling Entropy...' : divinationSystem === 'tarot' ? 'Draw the Cards' : 'Cast the Hexagram'}
             </motion.button>
 
             <p className="text-text-muted text-xs max-w-md mx-auto">
-              Cards are drawn using true quantum randomness from vacuum fluctuations,
+              {divinationSystem === 'tarot' ? 'Cards are drawn' : 'Lines are cast'} using true quantum randomness from vacuum fluctuations,
               measured by ID Quantique hardware at the German LfD (Landesamt für Digitalisierung).
             </p>
           </motion.div>
@@ -593,15 +780,19 @@ export default function Home() {
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-              className="w-16 h-16 border-2 border-violet-500 border-t-transparent rounded-full"
+              className={`w-16 h-16 border-2 border-t-transparent rounded-full ${
+                divinationSystem === 'tarot' ? 'border-violet-500' : 'border-amber-500'
+              }`}
             />
 
             <div className="text-center space-y-2">
               <p className="text-xl font-display text-text-mystic">
-                Drawing from the quantum void...
+                {divinationSystem === 'tarot' ? 'Drawing from the quantum void...' : 'Casting from the quantum void...'}
               </p>
               <p className="text-sm text-text-muted font-mono">
-                {selectedSpread.name} ({selectedSpread.cardCount} cards)
+                {divinationSystem === 'tarot'
+                  ? `${selectedSpread.name} (${selectedSpread.cardCount} cards)`
+                  : selectedIChingSpread.name}
               </p>
               <EntropyIndicator source="LfD QRNG" loading />
             </div>
@@ -619,7 +810,9 @@ export default function Home() {
           >
             {/* Header */}
             <div className="text-center space-y-2">
-              <h2 className="text-3xl md:text-4xl font-display font-semibold text-gradient-mystic">
+              <h2 className={`text-3xl md:text-4xl font-display font-semibold ${
+                reading.type === 'tarot' ? 'text-gradient-mystic' : 'text-gradient-iching'
+              }`}>
                 Your Reading
               </h2>
               <p className="text-text-muted text-sm font-mono">{reading.spread.name}</p>
@@ -629,44 +822,117 @@ export default function Home() {
               <EntropyIndicator source={reading.entropySource} />
             </div>
 
-            {/* Card Spread - Layout matches picker diagram */}
-            <SpreadLayout
-              drawnCards={reading.drawnCards}
-              positions={reading.spread.positions}
-              spreadId={reading.spread.id}
-              selectedCard={selectedCard}
-              setSelectedCard={setSelectedCard}
-            />
+            {/* Tarot Card Spread */}
+            {reading.type === 'tarot' && (
+              <>
+                <SpreadLayout
+                  drawnCards={reading.drawnCards}
+                  positions={reading.spread.positions}
+                  spreadId={reading.spread.id}
+                  selectedCard={selectedCard}
+                  setSelectedCard={setSelectedCard}
+                />
 
-            {/* Selected Card Detail */}
-            <AnimatePresence>
-              {selectedCard !== null && reading.drawnCards[selectedCard] && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                  className="bg-void-deep border border-violet-500/30 rounded-lg p-6 max-w-md mx-auto"
-                >
-                  <h3 className="text-2xl font-display font-semibold text-text-primary mb-2">
-                    {reading.drawnCards[selectedCard].card.name}
-                    {reading.drawnCards[selectedCard].reversed && (
-                      <span className="text-violet-400 text-sm ml-2">(Reversed)</span>
-                    )}
-                  </h3>
-                  <p className="text-text-muted text-sm mb-2">
-                    {reading.drawnCards[selectedCard].card.arcana}
-                    {reading.drawnCards[selectedCard].card.suit &&
-                      ` - ${reading.drawnCards[selectedCard].card.suit}`}
-                  </p>
-                  <p className="text-cyan-400 text-sm font-mono">
-                    Position: {reading.spread.positions[selectedCard]?.name}
-                  </p>
-                  <p className="text-text-muted text-xs mt-1">
-                    {reading.spread.positions[selectedCard]?.description}
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                {/* Selected Card Detail */}
+                <AnimatePresence>
+                  {selectedCard !== null && reading.drawnCards[selectedCard] && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 20 }}
+                      className="bg-void-deep border border-violet-500/30 rounded-lg p-6 max-w-md mx-auto"
+                    >
+                      <h3 className="text-2xl font-display font-semibold text-text-primary mb-2">
+                        {reading.drawnCards[selectedCard].card.name}
+                        {reading.drawnCards[selectedCard].reversed && (
+                          <span className="text-violet-400 text-sm ml-2">(Reversed)</span>
+                        )}
+                      </h3>
+                      <p className="text-text-muted text-sm mb-2">
+                        {reading.drawnCards[selectedCard].card.arcana}
+                        {reading.drawnCards[selectedCard].card.suit &&
+                          ` - ${reading.drawnCards[selectedCard].card.suit}`}
+                      </p>
+                      <p className="text-cyan-400 text-sm font-mono">
+                        Position: {reading.spread.positions[selectedCard]?.name}
+                      </p>
+                      <p className="text-text-muted text-xs mt-1">
+                        {reading.spread.positions[selectedCard]?.description}
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </>
+            )}
+
+            {/* I Ching Hexagram Display */}
+            {reading.type === 'iching' && (
+              <>
+                {/* Multiple hexagram selector for multi-cast spreads */}
+                {reading.casts.length > 1 && (
+                  <div className="flex justify-center gap-2 mb-4">
+                    {reading.casts.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedCastIndex(index)}
+                        className={`px-4 py-2 rounded-lg text-sm font-display transition-all ${
+                          selectedCastIndex === index
+                            ? 'bg-amber-600 text-white'
+                            : 'bg-void-deep border border-amber-500/30 text-text-muted hover:border-amber-500'
+                        }`}
+                      >
+                        {reading.casts.length === 2
+                          ? (index === 0 ? 'Past' : 'Future')
+                          : `Hexagram ${index + 1}`}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Current hexagram display */}
+                {reading.casts[selectedCastIndex] && (() => {
+                  const cast = reading.casts[selectedCastIndex];
+                  const primaryHexagram = getHexagramByNumber(cast.hexagramNumber);
+                  const transformedHexagram = cast.transformedHexagramNumber
+                    ? getHexagramByNumber(cast.transformedHexagramNumber)
+                    : null;
+
+                  if (!primaryHexagram) return null;
+
+                  return (
+                    <HexagramReadingDisplay
+                      primaryHexagram={primaryHexagram}
+                      transformedHexagram={transformedHexagram}
+                      castLines={cast.lines}
+                      revealed={true}
+                      onHexagramClick={(type) => setSelectedHexagram(type)}
+                    />
+                  );
+                })()}
+
+                {/* Hexagram Detail Modal */}
+                <AnimatePresence>
+                  {selectedHexagram && reading.casts[selectedCastIndex] && (() => {
+                    const cast = reading.casts[selectedCastIndex];
+                    const hexagramNumber = selectedHexagram === 'primary'
+                      ? cast.hexagramNumber
+                      : cast.transformedHexagramNumber;
+
+                    if (!hexagramNumber) return null;
+                    const hexagram = getHexagramByNumber(hexagramNumber);
+                    if (!hexagram) return null;
+
+                    return (
+                      <HexagramDetail
+                        hexagram={hexagram}
+                        castLines={selectedHexagram === 'primary' ? cast.lines : undefined}
+                        onClose={() => setSelectedHexagram(null)}
+                      />
+                    );
+                  })()}
+                </AnimatePresence>
+              </>
+            )}
 
             {/* Actions */}
             <div className="flex flex-col items-center gap-4">
@@ -685,7 +951,11 @@ export default function Home() {
                 </motion.button>
                 <motion.button
                   onClick={resetReading}
-                  className="px-6 py-3 bg-void-mid border border-violet-500/30 rounded-lg font-display hover:border-violet-500 transition-all"
+                  className={`px-6 py-3 bg-void-mid border rounded-lg font-display transition-all ${
+                    reading.type === 'tarot'
+                      ? 'border-violet-500/30 hover:border-violet-500'
+                      : 'border-amber-500/30 hover:border-amber-500'
+                  }`}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.98 }}
                 >
