@@ -1,15 +1,194 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Hexagram as HexagramData, TRIGRAMS, getHexagramByNumber, Trigram } from '@/data/iching';
+import { Hexagram as HexagramData, TRIGRAMS, getHexagramByNumber, Trigram, HexagramMood } from '@/data/iching';
 import { CastLine } from '@/lib/entropy/types';
+import { useMemo } from 'react';
+
+// Particle/element types for different trigrams
+const TRIGRAM_ELEMENTS: Record<string, { particles: string[]; animation: string }> = {
+  qian: { particles: ['✦', '✧', '⋆'], animation: 'float-up' },      // Heaven - stars rising
+  kun: { particles: ['·', '•', '◦'], animation: 'settle' },          // Earth - dust settling
+  zhen: { particles: ['⚡', '↯', '϶'], animation: 'flash' },         // Thunder - lightning
+  kan: { particles: ['〰', '≋', '∿'], animation: 'flow' },           // Water - waves
+  gen: { particles: ['▲', '△', '◮'], animation: 'still' },          // Mountain - stones
+  xun: { particles: ['〜', '∼', '≀'], animation: 'drift' },          // Wind - wisps
+  li: { particles: ['🔥', '✺', '❋'], animation: 'flicker' },        // Fire - flames
+  dui: { particles: ['○', '◯', '◌'], animation: 'ripple' },         // Lake - ripples
+};
+
+// Mood-based styling
+const MOOD_STYLES: Record<HexagramMood, { glow: string; intensity: string; pulse: boolean }> = {
+  serene: { glow: 'shadow-[0_0_30px_rgba(148,163,184,0.3)]', intensity: 'opacity-60', pulse: false },
+  tense: { glow: 'shadow-[0_0_30px_rgba(239,68,68,0.3)]', intensity: 'opacity-80', pulse: true },
+  dynamic: { glow: 'shadow-[0_0_40px_rgba(251,191,36,0.4)]', intensity: 'opacity-90', pulse: true },
+  mysterious: { glow: 'shadow-[0_0_35px_rgba(139,92,246,0.3)]', intensity: 'opacity-70', pulse: false },
+  joyful: { glow: 'shadow-[0_0_35px_rgba(74,222,128,0.3)]', intensity: 'opacity-85', pulse: false },
+  dangerous: { glow: 'shadow-[0_0_40px_rgba(220,38,38,0.4)]', intensity: 'opacity-90', pulse: true },
+  powerful: { glow: 'shadow-[0_0_45px_rgba(251,191,36,0.5)]', intensity: 'opacity-95', pulse: true },
+  gentle: { glow: 'shadow-[0_0_25px_rgba(148,163,184,0.2)]', intensity: 'opacity-50', pulse: false },
+};
+
+// Atmospheric particles component
+function AtmosphericParticles({
+  upperTrigram,
+  lowerTrigram,
+  mood
+}: {
+  upperTrigram: string;
+  lowerTrigram: string;
+  mood: HexagramMood;
+}) {
+  const upperElements = TRIGRAM_ELEMENTS[upperTrigram] || TRIGRAM_ELEMENTS.qian;
+  const lowerElements = TRIGRAM_ELEMENTS[lowerTrigram] || TRIGRAM_ELEMENTS.kun;
+
+  const particles = useMemo(() => {
+    const result = [];
+    // Upper particles (fall from top)
+    for (let i = 0; i < 8; i++) {
+      result.push({
+        id: `upper-${i}`,
+        char: upperElements.particles[i % upperElements.particles.length],
+        x: 10 + Math.random() * 80,
+        delay: Math.random() * 3,
+        duration: 4 + Math.random() * 3,
+        isUpper: true,
+      });
+    }
+    // Lower particles (rise from bottom)
+    for (let i = 0; i < 6; i++) {
+      result.push({
+        id: `lower-${i}`,
+        char: lowerElements.particles[i % lowerElements.particles.length],
+        x: 10 + Math.random() * 80,
+        delay: Math.random() * 3,
+        duration: 5 + Math.random() * 3,
+        isUpper: false,
+      });
+    }
+    return result;
+  }, [upperElements, lowerElements]);
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          className="absolute text-sm opacity-30"
+          style={{ left: `${p.x}%` }}
+          initial={{
+            y: p.isUpper ? '-10%' : '110%',
+            opacity: 0
+          }}
+          animate={{
+            y: p.isUpper ? '110%' : '-10%',
+            opacity: [0, 0.4, 0.4, 0]
+          }}
+          transition={{
+            duration: p.duration,
+            delay: p.delay,
+            repeat: Infinity,
+            ease: 'linear'
+          }}
+        >
+          {p.char}
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+// Scene visualization component
+interface HexagramSceneProps {
+  hexagram: HexagramData;
+  revealed?: boolean;
+  delay?: number;
+}
+
+function HexagramScene({ hexagram, revealed = true, delay = 0 }: HexagramSceneProps) {
+  const { sceneData, mood } = hexagram;
+  const moodStyle = MOOD_STYLES[mood];
+
+  return (
+    <motion.div
+      className={`relative rounded-xl overflow-hidden ${moodStyle.glow}`}
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: revealed ? 1 : 0, scale: 1 }}
+      transition={{ duration: 0.8, delay }}
+    >
+      {/* Gradient background based on hexagram colors */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `linear-gradient(135deg, ${sceneData.colors[0]}, ${sceneData.colors[1]}, ${sceneData.colors[2]})`,
+        }}
+      />
+
+      {/* Atmospheric particles */}
+      <AtmosphericParticles
+        upperTrigram={hexagram.upperTrigram}
+        lowerTrigram={hexagram.lowerTrigram}
+        mood={mood}
+      />
+
+      {/* Scene content */}
+      <div className="relative z-10 p-6 space-y-4">
+        {/* Scene description */}
+        <motion.p
+          className="text-sm text-white/90 leading-relaxed font-serif italic"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: revealed ? 1 : 0, y: 0 }}
+          transition={{ delay: delay + 0.3, duration: 0.6 }}
+        >
+          {sceneData.scene}
+        </motion.p>
+
+        {/* Sensory details */}
+        <motion.div
+          className="space-y-2 pt-2 border-t border-white/10"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: revealed ? 1 : 0 }}
+          transition={{ delay: delay + 0.6, duration: 0.6 }}
+        >
+          <div className="flex items-start gap-2">
+            <span className="text-white/50 text-xs uppercase tracking-wider w-12 shrink-0">Feel</span>
+            <span className="text-white/70 text-xs">{sceneData.feel}</span>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="text-white/50 text-xs uppercase tracking-wider w-12 shrink-0">Hear</span>
+            <span className="text-white/70 text-xs">{sceneData.sounds}</span>
+          </div>
+        </motion.div>
+
+        {/* Mood indicator */}
+        <motion.div
+          className="flex items-center gap-2 pt-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: revealed ? 1 : 0 }}
+          transition={{ delay: delay + 0.8, duration: 0.4 }}
+        >
+          <span className="text-white/40 text-[10px] uppercase tracking-wider">Energy</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider ${
+            mood === 'dangerous' || mood === 'tense' ? 'bg-red-500/20 text-red-300' :
+            mood === 'dynamic' || mood === 'powerful' ? 'bg-amber-500/20 text-amber-300' :
+            mood === 'joyful' ? 'bg-green-500/20 text-green-300' :
+            mood === 'mysterious' ? 'bg-purple-500/20 text-purple-300' :
+            'bg-zinc-500/20 text-zinc-300'
+          }`}>
+            {mood}
+          </span>
+        </motion.div>
+      </div>
+    </motion.div>
+  );
+}
 
 interface HexagramLineProps {
   isYang: boolean;
   isChanging?: boolean;
   delay?: number;
   animate?: boolean;
-  lineNumber: number; // 1-6, bottom to top
+  lineNumber: number;
   showLabels?: boolean;
 }
 
@@ -26,47 +205,40 @@ function HexagramLine({
     visible: { scaleX: 1, opacity: 1 },
   };
 
-  // Determine line type name for AR overlay
   const lineTypeName = isYang ? 'Yang' : 'Yin';
-  const lineDescription = isYang ? 'solid, active' : 'broken, receptive';
 
   const LineContent = () => (
     <div className="flex items-center w-full gap-2">
-      {/* Line position number */}
       {showLabels && (
         <div className="w-4 text-[10px] text-zinc-600 font-mono text-right shrink-0">
           {lineNumber}
         </div>
       )}
 
-      {/* The actual line */}
       <div className="flex items-center justify-center gap-2 flex-1 relative">
         {isYang ? (
-          // Solid line (Yang) - warmer color
-          <div className={`h-3 flex-1 rounded-sm transition-colors ${
+          <div className={`h-3 flex-1 rounded-sm transition-all duration-500 ${
             isChanging
-              ? 'bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.5)]'
+              ? 'bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.6)]'
               : 'bg-zinc-200'
           }`} />
         ) : (
-          // Broken line (Yin) - cooler color
           <>
-            <div className={`h-3 flex-1 rounded-sm transition-colors ${
+            <div className={`h-3 flex-1 rounded-sm transition-all duration-500 ${
               isChanging
-                ? 'bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.5)]'
+                ? 'bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.6)]'
                 : 'bg-zinc-400'
             }`} />
-            <div className="w-4" /> {/* Gap */}
-            <div className={`h-3 flex-1 rounded-sm transition-colors ${
+            <div className="w-4" />
+            <div className={`h-3 flex-1 rounded-sm transition-all duration-500 ${
               isChanging
-                ? 'bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.5)]'
+                ? 'bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.6)]'
                 : 'bg-zinc-400'
             }`} />
           </>
         )}
       </div>
 
-      {/* Changing line indicator - AR style */}
       {showLabels && (
         <div className="w-20 shrink-0">
           {isChanging ? (
@@ -78,13 +250,13 @@ function HexagramLine({
             >
               <motion.span
                 className="text-amber-400 text-xs"
-                animate={{ opacity: [0.6, 1, 0.6] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
+                animate={{ opacity: [0.6, 1, 0.6], rotate: [0, 180, 360] }}
+                transition={{ duration: 2, repeat: Infinity }}
               >
                 ⟳
               </motion.span>
               <span className="text-[10px] text-amber-400/90 font-medium">
-                moving
+                shifting
               </span>
             </motion.div>
           ) : (
@@ -118,7 +290,6 @@ function HexagramLine({
   );
 }
 
-// Trigram display component with AR overlay
 interface TrigramDisplayProps {
   trigram: Trigram;
   position: 'upper' | 'lower';
@@ -133,10 +304,7 @@ function TrigramDisplay({ trigram, position, delay = 0 }: TrigramDisplayProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4 }}
     >
-      {/* Trigram symbol */}
-      <span className="text-lg text-amber-400 font-mono">{trigram.symbol}</span>
-
-      {/* Info */}
+      <span className="text-xl text-amber-400 font-mono">{trigram.symbol}</span>
       <div className="flex flex-col">
         <div className="flex items-center gap-1.5">
           <span className="text-zinc-300 text-xs">{trigram.chinese}</span>
@@ -144,8 +312,6 @@ function TrigramDisplay({ trigram, position, delay = 0 }: TrigramDisplayProps) {
         </div>
         <span className="text-[10px] text-zinc-600 italic">{trigram.nature}</span>
       </div>
-
-      {/* Attribute badge */}
       <span className="px-1.5 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded text-[9px] text-amber-400/80 uppercase tracking-wider">
         {trigram.attribute}
       </span>
@@ -201,16 +367,13 @@ export function Hexagram({
       whileHover={{ scale: 1.02 }}
       onClick={onClick}
     >
-      {/* Label (position name) */}
       {label && (
         <div className="text-center text-xs text-zinc-500 mb-2 font-medium uppercase tracking-wider">
           {label}
         </div>
       )}
 
-      {/* Hexagram container */}
       <div className="bg-zinc-900/80 border border-zinc-700/50 rounded-lg p-4 backdrop-blur-sm">
-        {/* Upper trigram display */}
         {showTrigrams && upperTrigram && (
           <div className="mb-2 border-b border-zinc-800 pb-2">
             <div className="text-[9px] text-zinc-600 uppercase tracking-wider mb-1">Upper · Outer</div>
@@ -218,7 +381,6 @@ export function Hexagram({
           </div>
         )}
 
-        {/* The 6 lines - rendered top to bottom (line 6 at top, line 1 at bottom) */}
         <div className="flex flex-col gap-1 py-2">
           {[5, 4, 3, 2, 1, 0].map((lineIndex, visualIndex) => {
             const castLine = castLines?.[lineIndex];
@@ -239,7 +401,6 @@ export function Hexagram({
           })}
         </div>
 
-        {/* Lower trigram display */}
         {showTrigrams && lowerTrigram && (
           <div className="mt-2 border-t border-zinc-800 pt-2">
             <div className="text-[9px] text-zinc-600 uppercase tracking-wider mb-1">Lower · Inner</div>
@@ -247,7 +408,6 @@ export function Hexagram({
           </div>
         )}
 
-        {/* Hexagram info */}
         <div className="mt-3 text-center border-t border-zinc-800 pt-3">
           <div className="text-3xl text-zinc-300 font-serif">{hexagram.chinese}</div>
           <div className="text-sm text-zinc-300 mt-1 font-medium">
@@ -255,7 +415,6 @@ export function Hexagram({
           </div>
           <div className="text-xs text-zinc-500 italic">{hexagram.pinyin}</div>
 
-          {/* Essence - the key insight */}
           {showEssence && hexagram.essence && (
             <motion.div
               className="mt-2 text-xs text-amber-400/90 font-medium px-2"
@@ -295,95 +454,112 @@ export function HexagramReadingDisplay({
     .filter(Boolean) as number[];
 
   return (
-    <div className="flex flex-col items-center gap-6">
-      {/* Reading explanation header */}
+    <div className="flex flex-col items-center gap-6 w-full max-w-4xl mx-auto">
+      {/* Immersive Scene Visualization */}
+      <HexagramScene
+        hexagram={primaryHexagram}
+        revealed={revealed}
+        delay={delay}
+      />
+
+      {/* Reading explanation */}
       <motion.div
         className="text-center max-w-md"
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: revealed ? 1 : 0, y: 0 }}
-        transition={{ delay, duration: 0.5 }}
+        transition={{ delay: delay + 0.5, duration: 0.5 }}
       >
         <p className="text-xs text-zinc-500">
           {hasTransformation
-            ? `Your reading has ${changingLineNumbers.length} moving line${changingLineNumbers.length > 1 ? 's' : ''}, showing a situation in flux`
-            : 'All lines are stable — the situation is settled'}
+            ? `${changingLineNumbers.length} line${changingLineNumbers.length > 1 ? 's' : ''} in motion — the situation is transforming`
+            : 'All lines stable — the situation is settled'}
         </p>
       </motion.div>
 
+      {/* Hexagram display */}
       <div className={`flex items-start justify-center gap-4 md:gap-8 flex-wrap`}>
-        {/* Primary Hexagram */}
         <div className="flex flex-col items-center">
           <Hexagram
             hexagram={primaryHexagram}
             castLines={castLines}
             revealed={revealed}
-            delay={delay}
+            delay={delay + 0.3}
             onClick={() => onHexagramClick?.('primary')}
             size="lg"
             showTrigrams
             showEssence
-            label={hasTransformation ? "The Present" : "Your Reading"}
+            label={hasTransformation ? "Now" : "Your Reading"}
           />
         </div>
 
-        {/* Transformation Arrow & Explanation */}
         {hasTransformation && (
           <motion.div
-            className="flex flex-col items-center justify-center py-8 gap-2"
+            className="flex flex-col items-center justify-center py-8 gap-3"
             initial={{ opacity: 0 }}
             animate={{ opacity: revealed ? 1 : 0 }}
-            transition={{ duration: 0.5, delay: delay + 0.8 }}
+            transition={{ duration: 0.5, delay: delay + 1 }}
           >
-            {/* Flow indicator */}
+            {/* Animated flow */}
             <div className="flex items-center gap-1">
-              <motion.div
-                className="w-2 h-2 rounded-full bg-amber-500/60"
-                animate={{ x: [0, 8, 0], opacity: [0.3, 1, 0.3] }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              />
-              <motion.div
-                className="w-2 h-2 rounded-full bg-amber-500/60"
-                animate={{ x: [0, 8, 0], opacity: [0.3, 1, 0.3] }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
-              />
-              <motion.div
-                className="w-2 h-2 rounded-full bg-amber-500/60"
-                animate={{ x: [0, 8, 0], opacity: [0.3, 1, 0.3] }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
-              />
-              <span className="text-xl text-zinc-600 mx-1">→</span>
+              {[0, 1, 2].map((i) => (
+                <motion.div
+                  key={i}
+                  className="w-2 h-2 rounded-full bg-amber-500/60"
+                  animate={{ x: [0, 12, 0], opacity: [0.3, 1, 0.3] }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: i * 0.15
+                  }}
+                />
+              ))}
+              <span className="text-xl text-amber-500/60 mx-1">→</span>
             </div>
-
             <div className="text-[10px] text-zinc-500 text-center uppercase tracking-wider">
-              transforms<br/>into
+              becoming
             </div>
           </motion.div>
         )}
 
-        {/* Transformed Hexagram */}
         {hasTransformation && transformedHexagram && (
           <div className="flex flex-col items-center">
             <Hexagram
               hexagram={transformedHexagram}
               revealed={revealed}
-              delay={delay + 1}
+              delay={delay + 1.2}
               onClick={() => onHexagramClick?.('transformed')}
               size="lg"
               showTrigrams
               showEssence
-              label="Becoming"
+              label="Emerging"
             />
           </div>
         )}
       </div>
 
-      {/* Moving Lines Explanation Card */}
+      {/* Transformation scene (if applicable) */}
+      {hasTransformation && transformedHexagram && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: revealed ? 1 : 0, y: 0 }}
+          transition={{ delay: delay + 1.8, duration: 0.6 }}
+        >
+          <HexagramScene
+            hexagram={transformedHexagram}
+            revealed={revealed}
+            delay={delay + 1.8}
+          />
+        </motion.div>
+      )}
+
+      {/* Moving Lines Explanation */}
       {hasTransformation && (
         <motion.div
           className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4 max-w-lg text-center"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: revealed ? 1 : 0, y: 0 }}
-          transition={{ duration: 0.5, delay: delay + 1.5 }}
+          transition={{ duration: 0.5, delay: delay + 2.2 }}
         >
           <div className="flex items-center justify-center gap-2 mb-2">
             <motion.span
@@ -394,48 +570,46 @@ export function HexagramReadingDisplay({
               ⟳
             </motion.span>
             <span className="text-xs text-amber-400 font-medium uppercase tracking-wider">
-              Moving Lines: {changingLineNumbers.join(', ')}
+              Lines {changingLineNumbers.join(', ')} are in motion
             </span>
           </div>
           <p className="text-xs text-zinc-400">
-            These are the active points of your reading — where energy is shifting from one state to another.
-            The moving lines show <span className="text-amber-400/80">where</span> and <span className="text-amber-400/80">how</span> transformation is occurring.
+            These are the pivot points — where the energy shifts.
+            They show <span className="text-amber-400/80">how</span> the present transforms into what's coming.
           </p>
         </motion.div>
       )}
 
-      {/* At a Glance Summary */}
+      {/* Quick Summary */}
       <motion.div
         className="bg-zinc-900/60 border border-zinc-700/50 rounded-lg p-4 max-w-xl w-full"
         initial={{ opacity: 0 }}
         animate={{ opacity: revealed ? 1 : 0 }}
-        transition={{ duration: 0.5, delay: delay + 1.8 }}
+        transition={{ duration: 0.5, delay: delay + 2.5 }}
       >
         <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-          <span className="text-amber-400">◈</span> At a Glance
+          <span className="text-amber-400">◈</span> The Essence
         </div>
 
         <div className="space-y-3">
-          {/* Primary hexagram summary */}
           <div>
             <div className="text-xs text-zinc-400 mb-1">
               <span className="text-zinc-300 font-medium">{primaryHexagram.name}</span>
-              {' '}&mdash;{' '}
-              <span className="text-amber-400/80">{primaryHexagram.essence}</span>
+              {' '}—{' '}
+              <span className="text-amber-400/80 italic">{primaryHexagram.essence}</span>
             </div>
             <p className="text-xs text-zinc-500 leading-relaxed">
               {primaryHexagram.judgment.split('.')[0]}.
             </p>
           </div>
 
-          {/* Transformation summary */}
           {hasTransformation && transformedHexagram && (
             <div className="border-t border-zinc-800 pt-3">
               <div className="text-xs text-zinc-400 mb-1">
-                <span className="text-zinc-500">→</span>{' '}
+                <span className="text-amber-500/60">→</span>{' '}
                 <span className="text-zinc-300 font-medium">{transformedHexagram.name}</span>
-                {' '}&mdash;{' '}
-                <span className="text-amber-400/80">{transformedHexagram.essence}</span>
+                {' '}—{' '}
+                <span className="text-amber-400/80 italic">{transformedHexagram.essence}</span>
               </div>
               <p className="text-xs text-zinc-500 leading-relaxed">
                 {transformedHexagram.judgment.split('.')[0]}.
@@ -446,7 +620,7 @@ export function HexagramReadingDisplay({
 
         <div className="mt-3 pt-3 border-t border-zinc-800 text-center">
           <span className="text-[10px] text-zinc-600">
-            Tap hexagram for full interpretation
+            Tap hexagram for full classical text
           </span>
         </div>
       </motion.div>
@@ -460,7 +634,6 @@ interface MiniHexagramProps {
 }
 
 export function MiniHexagram({ className = '' }: MiniHexagramProps) {
-  // Show hexagram 1 (The Creative - all yang lines) as example
   return (
     <div className={`flex flex-col gap-0.5 ${className}`}>
       {[0, 1, 2, 3, 4, 5].map((i) => (
@@ -470,7 +643,7 @@ export function MiniHexagram({ className = '' }: MiniHexagramProps) {
   );
 }
 
-// Hexagram detail panel for when user clicks on a hexagram
+// Hexagram detail modal
 interface HexagramDetailProps {
   hexagram: HexagramData;
   castLines?: [CastLine, CastLine, CastLine, CastLine, CastLine, CastLine];
@@ -493,7 +666,7 @@ export function HexagramDetail({ hexagram, castLines, onClose }: HexagramDetailP
       onClick={onClose}
     >
       <motion.div
-        className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto"
+        className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 max-w-lg w-full max-h-[85vh] overflow-y-auto"
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
@@ -507,7 +680,6 @@ export function HexagramDetail({ hexagram, castLines, onClose }: HexagramDetailP
               {hexagram.number}. {hexagram.name}
             </div>
             <div className="text-sm text-zinc-500 italic">{hexagram.pinyin}</div>
-            {/* Essence */}
             <div className="text-sm text-amber-400 mt-2 font-medium">
               {hexagram.essence}
             </div>
@@ -520,21 +692,33 @@ export function HexagramDetail({ hexagram, castLines, onClose }: HexagramDetailP
           </button>
         </div>
 
-        {/* Trigram Relationship */}
+        {/* Scene */}
+        <div
+          className="rounded-lg p-4 mb-4 relative overflow-hidden"
+          style={{
+            background: `linear-gradient(135deg, ${hexagram.sceneData.colors[0]}, ${hexagram.sceneData.colors[1]})`,
+          }}
+        >
+          <p className="text-white/90 text-sm font-serif italic leading-relaxed">
+            {hexagram.sceneData.scene}
+          </p>
+          <div className="mt-3 pt-3 border-t border-white/10 space-y-1">
+            <p className="text-white/60 text-xs"><span className="text-white/40">Feel:</span> {hexagram.sceneData.feel}</p>
+            <p className="text-white/60 text-xs"><span className="text-white/40">Hear:</span> {hexagram.sceneData.sounds}</p>
+          </div>
+        </div>
+
+        {/* Trigram Dynamics */}
         <div className="bg-zinc-800/50 rounded-lg p-4 mb-4">
           <div className="text-zinc-500 text-xs uppercase tracking-wider mb-3">Trigram Dynamics</div>
           <div className="flex items-center justify-center gap-4">
-            {/* Upper */}
             <div className="text-center">
               <div className="text-2xl text-amber-400 font-mono">{upperTrigram.symbol}</div>
               <div className="text-sm text-zinc-300">{upperTrigram.chinese} {upperTrigram.image}</div>
               <div className="text-xs text-amber-400/70">{upperTrigram.attribute}</div>
               <div className="text-[10px] text-zinc-600 mt-1">outer · above</div>
             </div>
-
             <div className="text-zinc-600 text-lg">over</div>
-
-            {/* Lower */}
             <div className="text-center">
               <div className="text-2xl text-amber-400 font-mono">{lowerTrigram.symbol}</div>
               <div className="text-sm text-zinc-300">{lowerTrigram.chinese} {lowerTrigram.image}</div>
@@ -572,8 +756,7 @@ export function HexagramDetail({ hexagram, castLines, onClose }: HexagramDetailP
               Moving Lines: {changingLineNumbers.join(', ')}
             </div>
             <div className="text-zinc-300 text-sm">
-              These lines are in motion, shifting from one state to another. They represent
-              the active points where transformation is occurring in your situation.
+              These lines are shifting — the pivot points where your situation transforms.
             </div>
           </div>
         )}
