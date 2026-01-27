@@ -11,19 +11,30 @@ export interface Trigram {
   chinese: string;
   attribute: string;
   image: string;
+  symbol: string; // Unicode trigram symbol
+  nature: string; // Brief description of energy/nature
   lines: [LineType, LineType, LineType]; // bottom to top
 }
 
 export const TRIGRAMS: Record<string, Trigram> = {
-  qian: { name: 'Qian', chinese: '乾', attribute: 'Creative', image: 'Heaven', lines: ['yang', 'yang', 'yang'] },
-  kun: { name: 'Kun', chinese: '坤', attribute: 'Receptive', image: 'Earth', lines: ['yin', 'yin', 'yin'] },
-  zhen: { name: 'Zhen', chinese: '震', attribute: 'Arousing', image: 'Thunder', lines: ['yang', 'yin', 'yin'] },
-  kan: { name: 'Kan', chinese: '坎', attribute: 'Abysmal', image: 'Water', lines: ['yin', 'yang', 'yin'] },
-  gen: { name: 'Gen', chinese: '艮', attribute: 'Stillness', image: 'Mountain', lines: ['yin', 'yin', 'yang'] },
-  xun: { name: 'Xun', chinese: '巽', attribute: 'Gentle', image: 'Wind/Wood', lines: ['yin', 'yang', 'yang'] },
-  li: { name: 'Li', chinese: '離', attribute: 'Clinging', image: 'Fire', lines: ['yang', 'yin', 'yang'] },
-  dui: { name: 'Dui', chinese: '兌', attribute: 'Joyous', image: 'Lake', lines: ['yang', 'yang', 'yin'] },
+  qian: { name: 'Qian', chinese: '乾', attribute: 'Creative', image: 'Heaven', symbol: '☰', nature: 'strong, initiating', lines: ['yang', 'yang', 'yang'] },
+  kun: { name: 'Kun', chinese: '坤', attribute: 'Receptive', image: 'Earth', symbol: '☷', nature: 'yielding, nurturing', lines: ['yin', 'yin', 'yin'] },
+  zhen: { name: 'Zhen', chinese: '震', attribute: 'Arousing', image: 'Thunder', symbol: '☳', nature: 'shocking, awakening', lines: ['yang', 'yin', 'yin'] },
+  kan: { name: 'Kan', chinese: '坎', attribute: 'Abysmal', image: 'Water', symbol: '☵', nature: 'dangerous, deep', lines: ['yin', 'yang', 'yin'] },
+  gen: { name: 'Gen', chinese: '艮', attribute: 'Stillness', image: 'Mountain', symbol: '☶', nature: 'stopping, resting', lines: ['yin', 'yin', 'yang'] },
+  xun: { name: 'Xun', chinese: '巽', attribute: 'Gentle', image: 'Wind/Wood', symbol: '☴', nature: 'penetrating, subtle', lines: ['yin', 'yang', 'yang'] },
+  li: { name: 'Li', chinese: '離', attribute: 'Clinging', image: 'Fire', symbol: '☲', nature: 'bright, clarifying', lines: ['yang', 'yin', 'yang'] },
+  dui: { name: 'Dui', chinese: '兌', attribute: 'Joyous', image: 'Lake', symbol: '☱', nature: 'joyful, open', lines: ['yang', 'yang', 'yin'] },
 };
+
+export type HexagramMood = 'serene' | 'tense' | 'dynamic' | 'mysterious' | 'joyful' | 'dangerous' | 'powerful' | 'gentle';
+
+export interface HexagramScene {
+  scene: string; // A vivid moment/landscape description
+  feel: string; // What you'd physically/emotionally feel
+  sounds: string; // What you'd hear
+  colors: [string, string, string]; // Gradient colors for atmosphere
+}
 
 export interface Hexagram {
   number: number;
@@ -34,6 +45,9 @@ export interface Hexagram {
   lowerTrigram: string;
   judgment: string;
   image: string;
+  essence: string; // One-line core meaning for quick understanding
+  mood: HexagramMood;
+  sceneData: HexagramScene;
   lines: [LineType, LineType, LineType, LineType, LineType, LineType]; // bottom to top
 }
 
@@ -103,6 +117,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'qian',
     judgment: 'The Creative works sublime success, furthering through perseverance.',
     image: 'The movement of heaven is full of power. Thus the superior man makes himself strong and untiring.',
+    essence: 'Pure creative power — initiate boldly, lead with strength',
+    mood: 'powerful',
+    sceneData: {
+      scene: 'You stand at the summit of the world. Above you, an infinite dome of stars wheels in eternal motion. The air crackles with potential. Everything is possible.',
+      feel: 'Electric vitality surging through every cell. The weight of potential pressing outward from your chest. Absolute certainty.',
+      sounds: 'A deep, subsonic hum of cosmic machinery. The crack of lightning in clear air.',
+      colors: ['#1e1b4b', '#4338ca', '#fbbf24'],
+    },
     lines: ['yang', 'yang', 'yang', 'yang', 'yang', 'yang'],
   },
   {
@@ -114,6 +136,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'kun',
     judgment: 'The Receptive brings about sublime success, furthering through the perseverance of a mare.',
     image: 'The earth\'s condition is receptive devotion. Thus the superior man who has breadth of character carries the outer world.',
+    essence: 'Yield and support — follow rather than lead, nurture growth',
+    mood: 'serene',
+    sceneData: {
+      scene: 'An endless plain at dusk. Rich, dark soil stretches to every horizon. Seeds sleep beneath the surface, waiting. The earth holds everything without effort.',
+      feel: 'Profound groundedness. The patience of stone. An emptiness that is fullness—ready to receive.',
+      sounds: 'Wind moving through tall grass. Distant hoofbeats of wild horses.',
+      colors: ['#1c1917', '#422006', '#78716c'],
+    },
     lines: ['yin', 'yin', 'yin', 'yin', 'yin', 'yin'],
   },
   {
@@ -125,6 +155,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'zhen',
     judgment: 'Difficulty at the Beginning works supreme success, furthering through perseverance. Nothing should be undertaken. It furthers one to appoint helpers.',
     image: 'Clouds and thunder: the image of Difficulty at the Beginning. Thus the superior man brings order out of confusion.',
+    essence: 'Birth pains — chaos precedes creation, seek helpers',
+    mood: 'tense',
+    sceneData: {
+      scene: 'A violent thunderstorm over churning dark waters. Lightning illuminates chaos. A single green shoot pushes through cracked earth, trembling but alive.',
+      feel: 'The pressure of being born. Confusion and disorientation. A desperate, vital urge to break through.',
+      sounds: 'Thunder rolling across the sky. Rain hammering. The crack of breaking shells.',
+      colors: ['#0c0a09', '#1e3a5f', '#4ade80'],
+    },
     lines: ['yang', 'yin', 'yin', 'yin', 'yang', 'yin'],
   },
   {
@@ -136,6 +174,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'kan',
     judgment: 'Youthful Folly has success. It is not I who seek the young fool; the young fool seeks me.',
     image: 'A spring wells up at the foot of the mountain: the image of Youth. Thus the superior man fosters his character by thoroughness in all that he does.',
+    essence: 'Inexperience — be humble, seek teaching, learn from mistakes',
+    mood: 'mysterious',
+    sceneData: {
+      scene: 'Mist swirls at the base of an ancient mountain. A spring bubbles up through moss-covered rocks, its path unclear. An old sage waits in shadow.',
+      feel: 'The fog of not-knowing. Humility in the face of mystery. The tender vulnerability of the beginner.',
+      sounds: 'Water trickling over stones. Mist muffling everything. Distant temple bells.',
+      colors: ['#1e293b', '#64748b', '#94a3b8'],
+    },
     lines: ['yin', 'yang', 'yin', 'yin', 'yin', 'yang'],
   },
   {
@@ -147,6 +193,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'qian',
     judgment: 'Waiting. If you are sincere, you have light and success. Perseverance brings good fortune.',
     image: 'Clouds rise up to heaven: the image of Waiting. Thus the superior man eats and drinks, is joyous and of good cheer.',
+    essence: 'Patient pause — the time is not yet right, nourish yourself',
+    mood: 'serene',
+    sceneData: {
+      scene: 'Rain clouds gather on the horizon but have not yet arrived. You sit in a warm shelter with food and drink, watching the approaching storm with calm confidence.',
+      feel: 'Relaxed alertness. The luxury of patience. Hunger that knows it will be fed.',
+      sounds: 'Distant thunder. Wine being poured. Comfortable silence.',
+      colors: ['#1e3a5f', '#475569', '#fef3c7'],
+    },
     lines: ['yang', 'yang', 'yang', 'yin', 'yang', 'yin'],
   },
   {
@@ -158,6 +212,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'kan',
     judgment: 'Conflict. You are sincere and are being obstructed. A cautious halt halfway brings good fortune.',
     image: 'Heaven and water go their opposite ways: the image of Conflict. Thus in all his transactions the superior man carefully considers the beginning.',
+    essence: 'Opposition — avoid escalation, compromise, seek mediation',
+    mood: 'tense',
+    sceneData: {
+      scene: 'Two powerful forces meet and push against each other. The sky presses down while water rises up. Neither yields. The air between them vibrates with pressure.',
+      feel: 'Tension in the jaw. The righteous heat of being opposed. The exhaustion of struggle.',
+      sounds: 'Grinding. Pressure. Two voices arguing in the distance.',
+      colors: ['#0f172a', '#dc2626', '#1e40af'],
+    },
     lines: ['yin', 'yang', 'yin', 'yang', 'yang', 'yang'],
   },
   {
@@ -169,6 +231,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'kan',
     judgment: 'The Army. The army needs perseverance and a strong man. Good fortune without blame.',
     image: 'In the middle of the earth is water: the image of the Army. Thus the superior man increases his masses by generosity toward the people.',
+    essence: 'Organized force — discipline required, choose leadership wisely',
+    mood: 'powerful',
+    sceneData: {
+      scene: 'Underground rivers flow beneath vast plains. An army camps in disciplined rows. One commander stands on a hill, surveying the forces that move as one.',
+      feel: 'The weight of responsibility. Coiled potential. The strange calm before action.',
+      sounds: 'Boots marching in rhythm. Metal on metal. Commands echoing.',
+      colors: ['#1c1917', '#374151', '#6b7280'],
+    },
     lines: ['yin', 'yang', 'yin', 'yin', 'yin', 'yin'],
   },
   {
@@ -180,6 +250,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'kun',
     judgment: 'Holding Together brings good fortune. Inquire of the oracle once again whether you possess sublimity, constancy, and perseverance.',
     image: 'On the earth is water: the image of Holding Together. Thus the kings of antiquity bestowed the different states as fiefs and cultivated friendly relations with the feudal lords.',
+    essence: 'Unity — form alliances, join with others, belong',
+    mood: 'gentle',
+    sceneData: {
+      scene: 'Water pools on fertile earth, nourishing all equally. Streams converge into a single river. A circle of people join hands around a fire.',
+      feel: 'The warmth of belonging. Relief of not being alone. The strength of many becoming one.',
+      sounds: 'Water flowing together. Voices in harmony. A heartbeat shared.',
+      colors: ['#164e63', '#0e7490', '#422006'],
+    },
     lines: ['yin', 'yin', 'yin', 'yin', 'yang', 'yin'],
   },
   {
@@ -191,6 +269,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'qian',
     judgment: 'The Taming Power of the Small has success. Dense clouds, no rain from our western region.',
     image: 'The wind drives across heaven: the image of the Taming Power of the Small. Thus the superior man refines the outward aspect of his nature.',
+    essence: 'Gentle restraint — small forces can guide great ones',
+    mood: 'gentle',
+    sceneData: {
+      scene: 'High winds sculpt the movement of clouds across an immense sky. The storm gathers but does not break. A silk thread guides a powerful kite.',
+      feel: 'Subtle tension. The delicate art of influence without force. Clouds heavy with unshed rain.',
+      sounds: 'Wind humming through strings. Fabric rippling. Held breath.',
+      colors: ['#1e3a5f', '#64748b', '#e0e7ff'],
+    },
     lines: ['yang', 'yang', 'yang', 'yin', 'yang', 'yang'],
   },
   {
@@ -202,6 +288,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'dui',
     judgment: 'Treading upon the tail of the tiger. It does not bite the man. Success.',
     image: 'Heaven above, the lake below: the image of Treading. Thus the superior man discriminates between high and low.',
+    essence: 'Careful conduct — tread lightly in dangerous territory',
+    mood: 'dangerous',
+    sceneData: {
+      scene: 'A moonlit path crosses tiger territory. Each step must be placed with absolute precision. The beast sleeps nearby, tail twitching. You smile and walk on.',
+      feel: 'Hyper-awareness of every sensation. The thrill of danger navigated. Feet barely touching ground.',
+      sounds: 'Your own heartbeat. A tiger\'s slow breathing. Leaves crackling underfoot.',
+      colors: ['#0f172a', '#f59e0b', '#fef3c7'],
+    },
     lines: ['yang', 'yang', 'yin', 'yang', 'yang', 'yang'],
   },
   {
@@ -213,6 +307,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'qian',
     judgment: 'Peace. The small departs, the great approaches. Good fortune. Success.',
     image: 'Heaven and earth unite: the image of Peace. Thus the ruler divides and completes the course of heaven and earth.',
+    essence: 'Harmony — heaven and earth in balance, seize this moment',
+    mood: 'joyful',
+    sceneData: {
+      scene: 'Spring equinox. Heaven bends down to kiss the earth. Flowers bloom everywhere. All things communicate freely. This is the golden hour of existence.',
+      feel: 'Effortless flow. Everything working together. The rare perfection of complete harmony.',
+      sounds: 'Birdsong at dawn. Laughter. Seeds cracking open.',
+      colors: ['#14532d', '#4ade80', '#fef3c7'],
+    },
     lines: ['yang', 'yang', 'yang', 'yin', 'yin', 'yin'],
   },
   {
@@ -224,6 +326,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'kun',
     judgment: 'Standstill. Evil people do not further the perseverance of the superior man. The great departs; the small approaches.',
     image: 'Heaven and earth do not unite: the image of Standstill. Thus the superior man falls back upon his inner worth.',
+    essence: 'Stagnation — communication blocked, withdraw and wait',
+    mood: 'tense',
+    sceneData: {
+      scene: 'Heaven and earth turn away from each other. A cold gap opens between them. Nothing flows. Everything freezes in place. Winter without end.',
+      feel: 'Isolation. The frustration of blocked energy. The weight of stagnant air.',
+      sounds: 'Silence. Doors closing. The creak of ice.',
+      colors: ['#0f172a', '#1e293b', '#475569'],
+    },
     lines: ['yin', 'yin', 'yin', 'yang', 'yang', 'yang'],
   },
   {
@@ -235,6 +345,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'li',
     judgment: 'Fellowship with Men in the open. Success. It furthers one to cross the great water.',
     image: 'Heaven together with fire: the image of Fellowship with Men. Thus the superior man organizes the clans and makes distinctions between things.',
+    essence: 'Community — gather with like-minded people openly',
+    mood: 'joyful',
+    sceneData: {
+      scene: 'A great fire burns beneath the open sky. People gather from all directions, drawn by the light. Faces glow in the flames. Strangers become kin.',
+      feel: 'The warmth of recognition. Finding your people. Hearts synchronized around shared purpose.',
+      sounds: 'Crackling fire. Voices blending. Songs rising to heaven.',
+      colors: ['#1e1b4b', '#f97316', '#fcd34d'],
+    },
     lines: ['yang', 'yin', 'yang', 'yang', 'yang', 'yang'],
   },
   {
@@ -246,6 +364,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'qian',
     judgment: 'Possession in Great Measure. Supreme success.',
     image: 'Fire in heaven above: the image of Possession in Great Measure. Thus the superior man curbs evil and furthers good.',
+    essence: 'Abundance — wealth and power are yours, use them wisely',
+    mood: 'powerful',
+    sceneData: {
+      scene: 'The sun blazes at its zenith. Golden light pours over a kingdom without end. Every treasure lies open. All resources are at your command.',
+      feel: 'Overwhelming abundance. The weight of blessing. The responsibility of great fortune.',
+      sounds: 'Gold coins cascading. Trumpets. The roar of midday sun.',
+      colors: ['#1e1b4b', '#f59e0b', '#fcd34d'],
+    },
     lines: ['yang', 'yang', 'yang', 'yang', 'yin', 'yang'],
   },
   {
@@ -257,6 +383,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'gen',
     judgment: 'Modesty creates success. The superior man carries things through.',
     image: 'Within the earth, a mountain: the image of Modesty. Thus the superior man reduces that which is too much, and augments that which is too little.',
+    essence: 'Humility — true power conceals itself, balance extremes',
+    mood: 'serene',
+    sceneData: {
+      scene: 'A mountain hidden within the earth. Its peak does not pierce the sky. Its power is invisible, unannounced. Water flows around it naturally.',
+      feel: 'The strength of having nothing to prove. Quiet confidence. Invisible depth.',
+      sounds: 'Underground streams. Stone settling. Soft footsteps.',
+      colors: ['#1c1917', '#57534e', '#78716c'],
+    },
     lines: ['yin', 'yin', 'yang', 'yin', 'yin', 'yin'],
   },
   {
@@ -268,6 +402,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'kun',
     judgment: 'Enthusiasm. It furthers one to install helpers and to set armies marching.',
     image: 'Thunder comes resounding out of the earth: the image of Enthusiasm. Thus the ancient kings made music in order to honor merit.',
+    essence: 'Joyful momentum — inspire others, move with the energy',
+    mood: 'dynamic',
+    sceneData: {
+      scene: 'Thunder erupts from the ground. The earth itself begins to dance. Drums beat as ancient rhythms take over. Everyone moves as one body.',
+      feel: 'Irresistible momentum. Joy that demands expression. The body knowing what the mind forgets.',
+      sounds: 'Thunder drums. Stomping feet. Music that moves bones.',
+      colors: ['#422006', '#f97316', '#fcd34d'],
+    },
     lines: ['yin', 'yin', 'yin', 'yang', 'yin', 'yin'],
   },
   {
@@ -279,6 +421,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'zhen',
     judgment: 'Following has supreme success. Perseverance furthers. No blame.',
     image: 'Thunder in the middle of the lake: the image of Following. Thus the superior man at nightfall goes indoors for rest and recuperation.',
+    essence: 'Adapt — follow the flow, rest when needed',
+    mood: 'serene',
+    sceneData: {
+      scene: 'Evening falls. Thunder echoes across a still lake as you make your way home. The path is familiar. There is no resistance—only the wisdom of timing.',
+      feel: 'Release of control. The relief of surrender. Effortless movement.',
+      sounds: 'Distant thunder. Water lapping. A door closing for the night.',
+      colors: ['#1e293b', '#0ea5e9', '#a78bfa'],
+    },
     lines: ['yang', 'yin', 'yin', 'yang', 'yang', 'yin'],
   },
   {
@@ -290,6 +440,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'xun',
     judgment: 'Work on what has been spoiled has supreme success. It furthers one to cross the great water.',
     image: 'The wind blows low on the mountain: the image of Decay. Thus the superior man stirs up the people and strengthens their spirit.',
+    essence: 'Repair — fix what is broken, correct inherited problems',
+    mood: 'tense',
+    sceneData: {
+      scene: 'A once-great house, now rotting. Wind stirs dust from forgotten rooms. You roll up your sleeves. The work will be hard, but the bones are good.',
+      feel: 'Disgust mixed with determination. Ancestral weight. The grim satisfaction of cleaning.',
+      sounds: 'Wood groaning. Insects. A broom sweeping.',
+      colors: ['#1c1917', '#713f12', '#4ade80'],
+    },
     lines: ['yin', 'yang', 'yang', 'yin', 'yin', 'yang'],
   },
   {
@@ -301,6 +459,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'dui',
     judgment: 'Approach has supreme success. Perseverance furthers. When the eighth month comes, there will be misfortune.',
     image: 'The earth above the lake: the image of Approach. Thus the superior man is inexhaustible in his will to teach.',
+    essence: 'Advancing — opportunity approaches, act before it passes',
+    mood: 'dynamic',
+    sceneData: {
+      scene: 'Something is coming over the horizon. The lake reflects the approaching presence. Energy builds. The moment of meeting draws near. Act now.',
+      feel: 'Anticipation rising. The urgency of opportunity. Time\'s arrow pointing forward.',
+      sounds: 'Approaching footsteps. Rising tide. A clock ticking.',
+      colors: ['#0c4a6e', '#38bdf8', '#fcd34d'],
+    },
     lines: ['yang', 'yang', 'yin', 'yin', 'yin', 'yin'],
   },
   {
@@ -312,6 +478,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'kun',
     judgment: 'Contemplation. The ablution has been made, but not yet the offering. Full of trust they look up to him.',
     image: 'The wind blows over the earth: the image of Contemplation. Thus the kings of old visited the regions of the world, contemplated the people, and gave them instruction.',
+    essence: 'Observation — step back and view the whole picture',
+    mood: 'serene',
+    sceneData: {
+      scene: 'You stand on a watchtower. Wind carries messages from every direction. The whole kingdom spreads below. From here, patterns become visible.',
+      feel: 'Expanded awareness. Sacred distance. The clarity that comes from elevation.',
+      sounds: 'Wind. Distant voices. Your own steady breathing.',
+      colors: ['#1e293b', '#64748b', '#e0e7ff'],
+    },
     lines: ['yin', 'yin', 'yin', 'yin', 'yang', 'yang'],
   },
   {
@@ -323,6 +497,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'zhen',
     judgment: 'Biting Through has success. It is favorable to let justice be administered.',
     image: 'Thunder and lightning: the image of Biting Through. Thus the kings of former times made firm the laws through clearly defined penalties.',
+    essence: 'Decisive action — remove obstacles forcefully, enforce justice',
+    mood: 'dynamic',
+    sceneData: {
+      scene: 'Lightning strikes. Thunder follows instantly. Something blocking the path is split in two. Jaws close on what must be eliminated. Justice, swift and clean.',
+      feel: 'The satisfaction of biting down hard. Obstacles dissolving. Fierce clarity.',
+      sounds: 'Crack of lightning. Snap of jaws. Hammer on anvil.',
+      colors: ['#1e1b4b', '#f97316', '#fef3c7'],
+    },
     lines: ['yang', 'yin', 'yin', 'yang', 'yin', 'yang'],
   },
   {
@@ -334,6 +516,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'li',
     judgment: 'Grace has success. In small matters it is favorable to undertake something.',
     image: 'Fire at the foot of the mountain: the image of Grace. Thus does the superior man proceed when clearing up current affairs.',
+    essence: 'Beauty — form matters, but substance matters more',
+    mood: 'gentle',
+    sceneData: {
+      scene: 'Firelight illuminates the face of a mountain at dusk. Every stone is decorated with golden light. Beauty adorns the solid. Elegance with strength.',
+      feel: 'Aesthetic appreciation. The pleasure of form. The limits of surface beauty.',
+      sounds: 'Fire crackling softly. Silk rustling. Music from a distance.',
+      colors: ['#44403c', '#f97316', '#fcd34d'],
+    },
     lines: ['yang', 'yin', 'yang', 'yin', 'yin', 'yang'],
   },
   {
@@ -345,6 +535,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'kun',
     judgment: 'Splitting Apart. It does not further one to go anywhere.',
     image: 'The mountain rests on the earth: the image of Splitting Apart. Thus those above can ensure their position only by giving generously to those below.',
+    essence: 'Dissolution — things fall apart, accept and prepare for renewal',
+    mood: 'dangerous',
+    sceneData: {
+      scene: 'A cliff face crumbles into the dark earth below. Layer by layer, the structure fails. Only one stone remains at the top. This is not the time to climb.',
+      feel: 'The ground giving way beneath you. Inevitable loss. Strange peace in collapse.',
+      sounds: 'Stone breaking. Landslide. Silence after.',
+      colors: ['#0c0a09', '#292524', '#78716c'],
+    },
     lines: ['yin', 'yin', 'yin', 'yin', 'yin', 'yang'],
   },
   {
@@ -356,6 +554,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'zhen',
     judgment: 'Return. Success. Going out and coming in without error. Friends come without blame.',
     image: 'Thunder within the earth: the image of the Turning Point. Thus the kings of antiquity closed the passes at the time of solstice.',
+    essence: 'Renewal — the turning point, light returns after darkness',
+    mood: 'joyful',
+    sceneData: {
+      scene: 'Winter solstice. In the deepest darkness, a single spark ignites beneath the frozen ground. Thunder stirs in the womb of earth. Light begins its return.',
+      feel: 'Hope after despair. The first warmth after cold. A turn of the great wheel.',
+      sounds: 'A heartbeat in silence. Ice cracking. Dawn birds.',
+      colors: ['#0f172a', '#4c1d95', '#fcd34d'],
+    },
     lines: ['yang', 'yin', 'yin', 'yin', 'yin', 'yin'],
   },
   {
@@ -367,6 +573,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'zhen',
     judgment: 'Innocence. Supreme success. Perseverance furthers. If someone is not as he should be, he has misfortune.',
     image: 'Under heaven thunder rolls: all things attain the natural state of innocence. Thus the kings of old, rich in virtue and in harmony with the time, fostered and nourished all beings.',
+    essence: 'Spontaneity — act without ulterior motive, be genuine',
+    mood: 'joyful',
+    sceneData: {
+      scene: 'Thunder rolls across a vast sky after rain. Everything is washed clean. A child runs through wet grass, laughing, wanting nothing. Pure being.',
+      feel: 'Freedom from calculation. Original nature. The lightness of having no agenda.',
+      sounds: 'Thunder fading. Children laughing. Rain dripping from leaves.',
+      colors: ['#1e3a5f', '#38bdf8', '#fef9c3'],
+    },
     lines: ['yang', 'yin', 'yin', 'yang', 'yang', 'yang'],
   },
   {
@@ -378,6 +592,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'qian',
     judgment: 'The Taming Power of the Great. Perseverance furthers. Not eating at home brings good fortune.',
     image: 'Heaven within the mountain: the image of the Taming Power of the Great. Thus the superior man acquaints himself with many sayings of antiquity.',
+    essence: 'Accumulation — hold back power, study the past',
+    mood: 'powerful',
+    sceneData: {
+      scene: 'Inside a mountain, vast treasures and ancient texts are stored. Heaven\'s power is contained within stone walls. Great forces held in reserve, growing stronger.',
+      feel: 'Potential compressed. The discipline of restraint. Power building through containment.',
+      sounds: 'Stone silence. Pages turning. A deep resonant hum.',
+      colors: ['#1c1917', '#44403c', '#4338ca'],
+    },
     lines: ['yang', 'yang', 'yang', 'yin', 'yin', 'yang'],
   },
   {
@@ -389,6 +611,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'zhen',
     judgment: 'The Corners of the Mouth. Perseverance brings good fortune. Pay heed to the providing of nourishment.',
     image: 'At the foot of the mountain, thunder: the image of Providing Nourishment. Thus the superior man is careful of his words and temperate in eating and drinking.',
+    essence: 'Sustenance — what you feed grows, choose carefully',
+    mood: 'serene',
+    sceneData: {
+      scene: 'A mouth carved into the mountain. What enters, what leaves. Thunder at its base stirs life. Every word, every bite—what are you feeding?',
+      feel: 'Awareness of intake. The weight of consumption. Hunger and its consequences.',
+      sounds: 'Chewing. Swallowing. Rumbling digestion. Words forming.',
+      colors: ['#1c1917', '#65a30d', '#fef3c7'],
+    },
     lines: ['yang', 'yin', 'yin', 'yin', 'yin', 'yang'],
   },
   {
@@ -400,6 +630,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'xun',
     judgment: 'Preponderance of the Great. The ridgepole sags to the breaking point. It furthers one to have somewhere to go.',
     image: 'The lake rises above the trees: the image of Preponderance of the Great. Thus the superior man, when he stands alone, is unconcerned.',
+    essence: 'Overload — structure is strained, extraordinary times need bold action',
+    mood: 'dangerous',
+    sceneData: {
+      scene: 'Floodwaters rise above the treetops. A bridge bends under impossible weight. The center cannot hold. Extraordinary pressure demands extraordinary response.',
+      feel: 'Everything bowing under strain. The exhilaration of extremity. No room for half-measures.',
+      sounds: 'Wood creaking. Water rising. A beam about to snap.',
+      colors: ['#0c4a6e', '#0891b2', '#dc2626'],
+    },
     lines: ['yin', 'yang', 'yang', 'yang', 'yang', 'yin'],
   },
   {
@@ -411,6 +649,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'kan',
     judgment: 'The Abysmal repeated. If you are sincere, you have success in your heart, and whatever you do succeeds.',
     image: 'Water flows on and reaches the goal: the image of the Abysmal repeated. Thus the superior man walks in lasting virtue and carries on the business of teaching.',
+    essence: 'Danger upon danger — stay true, water always finds its way',
+    mood: 'dangerous',
+    sceneData: {
+      scene: 'You fall into water only to find more water below. Depth beneath depth. No footing. But water always finds its way—even through stone, even in darkness.',
+      feel: 'Vertigo of endless depth. Pressure from all sides. The strange peace of letting go.',
+      sounds: 'Water rushing. Echoes in caverns. Your heart pounding.',
+      colors: ['#0c0a09', '#164e63', '#0ea5e9'],
+    },
     lines: ['yin', 'yang', 'yin', 'yin', 'yang', 'yin'],
   },
   {
@@ -422,6 +668,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'li',
     judgment: 'The Clinging. Perseverance furthers. It brings success. Care of the cow brings good fortune.',
     image: 'That which is bright rises twice: the image of Fire. Thus the great man, by perpetuating this brightness, illumines the four quarters of the world.',
+    essence: 'Radiance — clarity and awareness, light needs fuel',
+    mood: 'powerful',
+    sceneData: {
+      scene: 'Fire upon fire. Two suns. Pure radiance that illuminates all shadows. Nothing hidden. But fire needs something to burn—what is it clinging to?',
+      feel: 'Blazing clarity. Intense awareness. The heat of full visibility.',
+      sounds: 'Fire roaring. Light humming. The sizzle of revelation.',
+      colors: ['#7c2d12', '#f97316', '#fcd34d'],
+    },
     lines: ['yang', 'yin', 'yang', 'yang', 'yin', 'yang'],
   },
   {
@@ -433,6 +687,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'gen',
     judgment: 'Influence. Success. Perseverance furthers. To take a maiden to wife brings good fortune.',
     image: 'A lake on the mountain: the image of Influence. Thus the superior man encourages people to approach him by his readiness to receive them.',
+    essence: 'Mutual attraction — connection without force, be receptive',
+    mood: 'gentle',
+    sceneData: {
+      scene: 'A still lake rests atop a mountain. Without wind, without ripples, it draws all things to its reflection. Attraction without pursuit. Stillness that invites.',
+      feel: 'Magnetic pull. Openness that attracts. The electricity before touch.',
+      sounds: 'Silence that listens. A heartbeat quickening. Breath held.',
+      colors: ['#1e293b', '#0ea5e9', '#fecdd3'],
+    },
     lines: ['yin', 'yin', 'yang', 'yang', 'yang', 'yin'],
   },
   {
@@ -444,6 +706,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'xun',
     judgment: 'Duration. Success. No blame. Perseverance furthers. It furthers one to have somewhere to go.',
     image: 'Thunder and wind: the image of Duration. Thus the superior man stands firm and does not change his direction.',
+    essence: 'Constancy — endure through change, stay the course',
+    mood: 'serene',
+    sceneData: {
+      scene: 'Wind and thunder dance together, year after year, century after century. Their marriage never ends. Constant motion, constant relationship.',
+      feel: 'Rooted flexibility. The rhythm of commitment. Time becoming friend.',
+      sounds: 'Wind and thunder in eternal dialogue. The hum of persistence.',
+      colors: ['#1e3a5f', '#4f46e5', '#a78bfa'],
+    },
     lines: ['yin', 'yang', 'yang', 'yang', 'yin', 'yin'],
   },
   {
@@ -455,6 +725,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'gen',
     judgment: 'Retreat. Success. In what is small, perseverance furthers.',
     image: 'Mountain under heaven: the image of Retreat. Thus the superior man keeps the inferior man at a distance, not angrily but with reserve.',
+    essence: 'Strategic withdrawal — retreat is not defeat, preserve strength',
+    mood: 'mysterious',
+    sceneData: {
+      scene: 'The wise one walks backward into mist, disappearing up the mountain. Heaven waits above. This is not flight—it is strategy. The lesser forces advance into empty space.',
+      feel: 'The dignity of tactical withdrawal. Knowing when to leave. Power preserved.',
+      sounds: 'Footsteps fading. Mist muffling. Distant pursuit that finds nothing.',
+      colors: ['#1e293b', '#475569', '#e2e8f0'],
+    },
     lines: ['yin', 'yin', 'yang', 'yang', 'yang', 'yang'],
   },
   {
@@ -466,6 +744,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'qian',
     judgment: 'The Power of the Great. Perseverance furthers.',
     image: 'Thunder in heaven above: the image of the Power of the Great. Thus the superior man does not tread upon paths that do not accord with established order.',
+    essence: 'Surging strength — power must be used rightly',
+    mood: 'powerful',
+    sceneData: {
+      scene: 'Thunder crashes through heaven itself. A ram charges with unstoppable force. Muscles bunch and release. Power beyond measure—but power needs direction.',
+      feel: 'Surge of strength. The temptation of force. Vitality demanding outlet.',
+      sounds: 'Thunder booming. Hooves pounding. The roar of momentum.',
+      colors: ['#1e1b4b', '#7c3aed', '#fcd34d'],
+    },
     lines: ['yang', 'yang', 'yang', 'yang', 'yin', 'yin'],
   },
   {
@@ -477,6 +763,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'kun',
     judgment: 'Progress. The powerful prince is honored with horses in large numbers. In a single day he is granted audience three times.',
     image: 'The sun rises over the earth: the image of Progress. Thus the superior man himself brightens his bright virtue.',
+    essence: 'Advancement — the sun is rising, recognition comes',
+    mood: 'joyful',
+    sceneData: {
+      scene: 'Dawn breaks over the horizon. The sun climbs higher and higher. Golden light spreads across the land. You are being seen. You are rising.',
+      feel: 'The warmth of recognition. Effortless ascent. Virtue becoming visible.',
+      sounds: 'Dawn chorus. Trumpets. Applause.',
+      colors: ['#422006', '#f97316', '#fef3c7'],
+    },
     lines: ['yin', 'yin', 'yin', 'yang', 'yin', 'yang'],
   },
   {
@@ -488,6 +782,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'li',
     judgment: 'Darkening of the Light. In adversity it furthers one to be persevering.',
     image: 'The light has sunk into the earth: the image of Darkening of the Light. Thus does the superior man live with the great mass: he veils his light, yet still shines.',
+    essence: 'Hidden brilliance — conceal your light in dark times',
+    mood: 'mysterious',
+    sceneData: {
+      scene: 'The sun has set. Fire burns beneath the earth where no one can see it. In the darkness above, fools reign. But underground, the light remains—waiting.',
+      feel: 'The weight of concealment. Brilliance forced inward. Patient endurance.',
+      sounds: 'Footsteps in darkness. Whispers. A flame flickering in secret.',
+      colors: ['#0c0a09', '#1c1917', '#f97316'],
+    },
     lines: ['yang', 'yin', 'yang', 'yin', 'yin', 'yin'],
   },
   {
@@ -499,6 +801,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'li',
     judgment: 'The Family. The perseverance of the woman furthers.',
     image: 'Wind comes forth from fire: the image of the Family. Thus the superior man has substance in his words and duration in his way of life.',
+    essence: 'Household — tend to inner circles, roles matter',
+    mood: 'gentle',
+    sceneData: {
+      scene: 'A hearth fire sends warmth through the house. Wind carries the influence outward. Each person in their place. Love made visible through structure.',
+      feel: 'The warmth of belonging. The comfort of role. Love expressed through duty.',
+      sounds: 'Fire crackling. Voices in conversation. A door closing against the cold.',
+      colors: ['#292524', '#f97316', '#fef3c7'],
+    },
     lines: ['yang', 'yin', 'yang', 'yin', 'yang', 'yang'],
   },
   {
@@ -510,6 +820,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'dui',
     judgment: 'Opposition. In small matters, good fortune.',
     image: 'Above, fire; below, the lake: the image of Opposition. Thus amid all fellowship the superior man retains his individuality.',
+    essence: 'Estrangement — differences persist, small wins possible',
+    mood: 'tense',
+    sceneData: {
+      scene: 'Fire rises while water sinks. They see each other across an unbridgeable gap. Two sisters estranged. Different natures that cannot merge—yet still family.',
+      feel: 'The tension of difference. Misunderstanding across distance. Individuality preserved.',
+      sounds: 'Fire hissing at water. Voices that don\'t quite hear each other.',
+      colors: ['#0c4a6e', '#f97316', '#fecdd3'],
+    },
     lines: ['yang', 'yang', 'yin', 'yang', 'yin', 'yang'],
   },
   {
@@ -521,6 +839,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'gen',
     judgment: 'Obstruction. The southwest furthers. The northeast does not further. It furthers one to see the great man.',
     image: 'Water on the mountain: the image of Obstruction. Thus the superior man turns his attention to himself and molds his character.',
+    essence: 'Obstacles — the path is blocked, work on yourself',
+    mood: 'tense',
+    sceneData: {
+      scene: 'Water pools at the mountain\'s base, unable to climb. The path forward is blocked. Every direction meets resistance. Only one way remains: inward.',
+      feel: 'Frustration hitting stone. The redirection of blocked force. Stillness imposed.',
+      sounds: 'Water hitting rock. Your own breathing. Silence that forces reflection.',
+      colors: ['#1c1917', '#475569', '#0ea5e9'],
+    },
     lines: ['yin', 'yin', 'yang', 'yin', 'yang', 'yin'],
   },
   {
@@ -532,6 +858,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'kan',
     judgment: 'Deliverance. The southwest furthers. If there is no longer anything where one has to go, return brings good fortune.',
     image: 'Thunder and rain set in: the image of Deliverance. Thus the superior man pardons mistakes and forgives misdeeds.',
+    essence: 'Release — tension dissolves, forgive and move on',
+    mood: 'joyful',
+    sceneData: {
+      scene: 'Storm breaks. Thunder cracks the pressure open. Rain washes everything clean. The knots untie themselves. Tension releases into relief.',
+      feel: 'The exhale after holding breath. Burden lifted. Forgiveness flowing.',
+      sounds: 'Thunder rolling away. Rain falling. A sigh of relief.',
+      colors: ['#164e63', '#22d3ee', '#a5f3fc'],
+    },
     lines: ['yin', 'yang', 'yin', 'yang', 'yin', 'yin'],
   },
   {
@@ -543,6 +877,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'dui',
     judgment: 'Decrease combined with sincerity brings about supreme good fortune without blame. One may be persevering in this.',
     image: 'At the foot of the mountain, the lake: the image of Decrease. Thus the superior man controls his anger and restrains his instincts.',
+    essence: 'Sacrifice — give up something to gain something greater',
+    mood: 'serene',
+    sceneData: {
+      scene: 'The lake at the mountain\'s base gives its water to nourish the heights. Less below, more above. Sacrifice ascending. The gift that empties to fill.',
+      feel: 'The strange freedom of letting go. Loss that creates space. Emptiness becoming capacity.',
+      sounds: 'Water draining. Air filling space. Lighter breathing.',
+      colors: ['#1c1917', '#0ea5e9', '#e0e7ff'],
+    },
     lines: ['yang', 'yang', 'yin', 'yin', 'yin', 'yang'],
   },
   {
@@ -554,6 +896,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'zhen',
     judgment: 'Increase. It furthers one to undertake something. It furthers one to cross the great water.',
     image: 'Wind and thunder: the image of Increase. Thus the superior man: if he sees good, he imitates it; if he has faults, he rids himself of them.',
+    essence: 'Growth — favorable winds, undertake great things now',
+    mood: 'dynamic',
+    sceneData: {
+      scene: 'Thunder stirs the earth while wind spreads seeds everywhere. Everything multiplies. Growth accelerates. What you plant now will yield abundantly.',
+      feel: 'Expansion in every direction. Luck at your back. The momentum of blessing.',
+      sounds: 'Wind rushing. Thunder encouraging. Seeds crackling open.',
+      colors: ['#14532d', '#4ade80', '#fcd34d'],
+    },
     lines: ['yang', 'yin', 'yin', 'yin', 'yang', 'yang'],
   },
   {
@@ -565,6 +915,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'qian',
     judgment: 'Breakthrough. One must resolutely make the matter known at the court of the king. It must be announced truthfully. Danger.',
     image: 'The lake has risen up to heaven: the image of Breakthrough. Thus the superior man dispenses riches downward and refrains from resting on his virtue.',
+    essence: 'Resolution — the dam breaks, speak truth despite danger',
+    mood: 'dynamic',
+    sceneData: {
+      scene: 'The lake rises impossibly into heaven. Pressure reaches breaking point. The dam cracks. Truth bursts forth—dangerous, unstoppable, necessary.',
+      feel: 'The moment of rupture. Terror and exhilaration of release. No going back.',
+      sounds: 'Cracking. Rushing water. A voice finally speaking.',
+      colors: ['#1e1b4b', '#0ea5e9', '#fcd34d'],
+    },
     lines: ['yang', 'yang', 'yang', 'yang', 'yang', 'yin'],
   },
   {
@@ -576,6 +934,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'xun',
     judgment: 'Coming to Meet. The maiden is powerful. One should not marry such a maiden.',
     image: 'Under heaven, wind: the image of Coming to Meet. Thus does the prince act when disseminating his commands and proclaiming them to the four quarters of heaven.',
+    essence: 'Temptation — an influence enters, beware seductive forces',
+    mood: 'dangerous',
+    sceneData: {
+      scene: 'A single dark line enters from below. Wind penetrates heaven. Something seductive approaches—beautiful, powerful, potentially corrupting. One yin among five yang.',
+      feel: 'Attraction and warning. The pull of what you should resist. Danger wearing beauty.',
+      sounds: 'Whispers. Silk moving. Footsteps approaching.',
+      colors: ['#1e1b4b', '#7c3aed', '#fecdd3'],
+    },
     lines: ['yin', 'yang', 'yang', 'yang', 'yang', 'yang'],
   },
   {
@@ -587,6 +953,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'kun',
     judgment: 'Gathering Together. Success. The king approaches his temple. It furthers one to see the great man.',
     image: 'Over the earth, the lake: the image of Gathering Together. Thus the superior man renews his weapons in order to meet the unforeseen.',
+    essence: 'Assembly — people gather, prepare for what may come',
+    mood: 'powerful',
+    sceneData: {
+      scene: 'A great lake forms over the earth. Waters collect from everywhere. People gather at the temple. Mass converges. Something important is about to happen.',
+      feel: 'The electricity of crowd. Collective purpose. Preparation for what comes.',
+      sounds: 'Many voices. Waters merging. Weapons being sharpened.',
+      colors: ['#422006', '#0ea5e9', '#fcd34d'],
+    },
     lines: ['yin', 'yin', 'yin', 'yang', 'yang', 'yin'],
   },
   {
@@ -598,6 +972,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'xun',
     judgment: 'Pushing Upward has supreme success. One must see the great man. Fear not. Departure toward the south brings good fortune.',
     image: 'Within the earth, wood grows: the image of Pushing Upward. Thus the superior man of devoted character heaps up small things in order to achieve something high and great.',
+    essence: 'Ascending — steady growth upward, effort accumulates',
+    mood: 'dynamic',
+    sceneData: {
+      scene: 'A tree grows from within the earth, pushing slowly but inevitably upward. No drama, just persistent ascent. Small gains accumulating into great height.',
+      feel: 'Quiet determination. The patience of growth. Rising without fighting.',
+      sounds: 'Wood creaking upward. Roots extending. Leaves unfurling.',
+      colors: ['#1c1917', '#14532d', '#4ade80'],
+    },
     lines: ['yin', 'yang', 'yang', 'yin', 'yin', 'yin'],
   },
   {
@@ -609,6 +991,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'kan',
     judgment: 'Oppression. Success. Perseverance. The great man brings about good fortune. No blame. When one has something to say, it is not believed.',
     image: 'There is no water in the lake: the image of Exhaustion. Thus the superior man stakes his life on following his will.',
+    essence: 'Exhaustion — resources depleted, words fall on deaf ears',
+    mood: 'tense',
+    sceneData: {
+      scene: 'The lake is empty. Water has drained away to depths unreachable. You speak but no one hears. Resources gone. Only will remains.',
+      feel: 'The weight of depletion. Throat dry, voice unheard. Isolation at the bottom.',
+      sounds: 'Dry wind. Cracked earth. Words echoing unanswered.',
+      colors: ['#1c1917', '#78716c', '#0c4a6e'],
+    },
     lines: ['yin', 'yang', 'yin', 'yang', 'yang', 'yin'],
   },
   {
@@ -620,6 +1010,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'xun',
     judgment: 'The Well. The town may be changed, but the well cannot be changed. It neither decreases nor increases.',
     image: 'Water over wood: the image of the Well. Thus the superior man encourages the people at their work and exhorts them to help one another.',
+    essence: 'Source — tap into deep resources, the essential remains',
+    mood: 'serene',
+    sceneData: {
+      scene: 'A wooden bucket descends into dark water. The well has been here since before the town. Towns may move; the well remains. Essential, unchanging, nourishing.',
+      feel: 'Connection to the source. The reliability of depth. What always was, always is.',
+      sounds: 'Bucket splashing. Water drawn upward. Ancient creaking.',
+      colors: ['#1c1917', '#0e7490', '#164e63'],
+    },
     lines: ['yin', 'yang', 'yang', 'yin', 'yang', 'yin'],
   },
   {
@@ -631,6 +1029,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'li',
     judgment: 'Revolution. On your own day you are believed. Supreme success, furthering through perseverance. Remorse disappears.',
     image: 'Fire in the lake: the image of Revolution. Thus the superior man sets the calendar in order and makes the seasons clear.',
+    essence: 'Radical change — the old must go, transform completely',
+    mood: 'dynamic',
+    sceneData: {
+      scene: 'Fire burns in the middle of a lake. Impossible. The old order shatters. Steam rises as water and fire refuse to coexist. Something must transform completely.',
+      feel: 'The heat of necessary destruction. Old skin sloughing off. Phoenix moment.',
+      sounds: 'Steam hissing. Old structures breaking. New forms crackling into being.',
+      colors: ['#0c4a6e', '#f97316', '#fcd34d'],
+    },
     lines: ['yang', 'yin', 'yang', 'yang', 'yang', 'yin'],
   },
   {
@@ -642,6 +1048,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'xun',
     judgment: 'The Cauldron. Supreme good fortune. Success.',
     image: 'Fire over wood: the image of the Cauldron. Thus the superior man consolidates his fate by making his position correct.',
+    essence: 'Nourishing transformation — refine the raw into the sublime',
+    mood: 'powerful',
+    sceneData: {
+      scene: 'A sacred bronze vessel over flames. Wood feeds fire, fire transforms what\'s within. Raw becomes refined. Food becomes nourishment. This is alchemy.',
+      feel: 'The satisfaction of proper cooking. Transformation through heat. Sacred preparation.',
+      sounds: 'Bubbling. Flames licking bronze. The sizzle of refinement.',
+      colors: ['#78350f', '#f97316', '#fcd34d'],
+    },
     lines: ['yin', 'yang', 'yang', 'yang', 'yin', 'yang'],
   },
   {
@@ -653,6 +1067,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'zhen',
     judgment: 'Shock brings success. Shock comes—oh, oh! Laughing words—ha, ha! The shock terrifies for a hundred miles.',
     image: 'Thunder repeated: the image of Shock. Thus in fear and trembling the superior man sets his life in order and examines himself.',
+    essence: 'Shock — thunder strikes, fear leads to clarity',
+    mood: 'dynamic',
+    sceneData: {
+      scene: 'Thunder upon thunder. The ground shakes twice. First comes terror—then, strangely, laughter. The shock clears everything. Fear becomes freedom.',
+      feel: 'Heart pounding. The jolt of awakening. Fear transforming into exhilaration.',
+      sounds: 'BOOM. BOOM. Echoes rolling. Then—laughter.',
+      colors: ['#1e1b4b', '#7c3aed', '#fcd34d'],
+    },
     lines: ['yang', 'yin', 'yin', 'yang', 'yin', 'yin'],
   },
   {
@@ -664,6 +1086,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'gen',
     judgment: 'Keeping Still. Keeping his back still so that he no longer feels his body. He goes into his courtyard and does not see his people. No blame.',
     image: 'Mountains standing close together: the image of Keeping Still. Thus the superior man does not permit his thoughts to go beyond his situation.',
+    essence: 'Stillness — stop, meditate, cease movement',
+    mood: 'serene',
+    sceneData: {
+      scene: 'Two mountains face each other in absolute stillness. Nothing moves. Not even breath. The back is so still it disappears. Only presence remains.',
+      feel: 'The body dissolving into stillness. Thoughts stopping. Pure unmoving awareness.',
+      sounds: 'Silence. Not even wind. The space between heartbeats.',
+      colors: ['#1c1917', '#44403c', '#78716c'],
+    },
     lines: ['yin', 'yin', 'yang', 'yin', 'yin', 'yang'],
   },
   {
@@ -675,6 +1105,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'gen',
     judgment: 'Development. The maiden is given in marriage. Good fortune. Perseverance furthers.',
     image: 'On the mountain, a tree: the image of Development. Thus the superior man abides in dignity and virtue, in order to improve the mores.',
+    essence: 'Gradual progress — step by step, proper development',
+    mood: 'gentle',
+    sceneData: {
+      scene: 'A wild goose lands on a high branch. It didn\'t fly there directly—it flew to the shore, then the rock, then the plateau, then the tree. Gradual, proper, inevitable.',
+      feel: 'The patience of proper sequence. Each step preparing the next. Organic timing.',
+      sounds: 'Wings settling. Wood accepting weight. Proper order clicking into place.',
+      colors: ['#1c1917', '#14532d', '#e0e7ff'],
+    },
     lines: ['yin', 'yin', 'yang', 'yin', 'yang', 'yang'],
   },
   {
@@ -686,6 +1124,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'dui',
     judgment: 'The Marrying Maiden. Undertakings bring misfortune. Nothing that would further.',
     image: 'Thunder over the lake: the image of the Marrying Maiden. Thus the superior man understands the transitory in the light of the eternity of the end.',
+    essence: 'Subordinate position — accept limits, await proper time',
+    mood: 'tense',
+    sceneData: {
+      scene: 'Thunder rumbles over a joyous lake. A younger sister marries into a household where she has no power. Desire runs ahead of propriety. Wait.',
+      feel: 'Desire constrained. The frustration of wrong timing. Subordination that chafes.',
+      sounds: 'Thunder wanting to act. Lake reflecting. Footsteps waiting.',
+      colors: ['#1e293b', '#0ea5e9', '#a78bfa'],
+    },
     lines: ['yang', 'yang', 'yin', 'yang', 'yin', 'yin'],
   },
   {
@@ -697,6 +1143,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'li',
     judgment: 'Abundance has success. The king attains abundance. Be not sad. Be like the sun at midday.',
     image: 'Both thunder and lightning come: the image of Abundance. Thus the superior man decides lawsuits and carries out punishments.',
+    essence: 'Peak fullness — sun at zenith, enjoy but know decline comes',
+    mood: 'joyful',
+    sceneData: {
+      scene: 'High noon. The sun blazes at its peak. Thunder and lightning illuminate everything. Maximum power. Maximum visibility. This is the moment—be not sad that it will pass.',
+      feel: 'The glory of peak fullness. Bittersweet awareness of zenith. Blazing now.',
+      sounds: 'Thunder rolling. Light humming at maximum. The fullness of noon.',
+      colors: ['#78350f', '#f97316', '#fef3c7'],
+    },
     lines: ['yang', 'yin', 'yang', 'yang', 'yin', 'yin'],
   },
   {
@@ -708,6 +1162,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'gen',
     judgment: 'The Wanderer. Success through smallness. Perseverance brings good fortune to the wanderer.',
     image: 'Fire on the mountain: the image of the Wanderer. Thus the superior man is clear-minded and cautious in imposing penalties, and protracts no lawsuits.',
+    essence: 'Traveling — a stranger in strange lands, stay small and cautious',
+    mood: 'mysterious',
+    sceneData: {
+      scene: 'A fire burns on a distant mountain—a traveler\'s camp. No home here. Everything temporary. In strange lands, stay small. Light moves on.',
+      feel: 'The vulnerability of the stranger. Impermanence as companion. Lightness of having no roots.',
+      sounds: 'Wind on mountain. Fire crackling alone. Footsteps that don\'t stay.',
+      colors: ['#1c1917', '#f97316', '#e2e8f0'],
+    },
     lines: ['yin', 'yin', 'yang', 'yang', 'yin', 'yang'],
   },
   {
@@ -719,6 +1181,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'xun',
     judgment: 'The Gentle. Success through what is small. It furthers one to have somewhere to go. It furthers one to see the great man.',
     image: 'Winds following one upon the other: the image of the Gently Penetrating. Thus the superior man spreads his commands abroad and carries out his undertakings.',
+    essence: 'Gentle persistence — penetrate gradually like wind',
+    mood: 'gentle',
+    sceneData: {
+      scene: 'Wind upon wind. Ceaseless, subtle, penetrating everywhere. It enters through the smallest cracks. What resists the storm yields to the breeze.',
+      feel: 'The power of persistent gentleness. Infiltration without force. Patience that permeates.',
+      sounds: 'Wind through leaves. Whispers building. Breath after breath.',
+      colors: ['#1e293b', '#64748b', '#e0e7ff'],
+    },
     lines: ['yin', 'yang', 'yang', 'yin', 'yang', 'yang'],
   },
   {
@@ -730,6 +1200,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'dui',
     judgment: 'The Joyous. Success. Perseverance is favorable.',
     image: 'Lakes resting one on the other: the image of the Joyous. Thus the superior man joins with his friends for discussion and practice.',
+    essence: 'Joy — shared pleasure, cheerful communication',
+    mood: 'joyful',
+    sceneData: {
+      scene: 'Two lakes mirror each other, sharing their waters. Friends gather, laughter echoes across the surface. Joy doubled by sharing. Reflections sparkling.',
+      feel: 'Infectious delight. The multiplication of happiness through connection. Lightness.',
+      sounds: 'Laughter rippling. Voices in joyful exchange. Water dancing.',
+      colors: ['#0c4a6e', '#38bdf8', '#fef3c7'],
+    },
     lines: ['yang', 'yang', 'yin', 'yang', 'yang', 'yin'],
   },
   {
@@ -741,6 +1219,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'kan',
     judgment: 'Dispersion. Success. The king approaches his temple. It furthers one to cross the great water. Perseverance furthers.',
     image: 'The wind drives over the water: the image of Dispersion. Thus the kings of old sacrificed to the Lord and built temples.',
+    essence: 'Dissolution — rigid patterns break up, reunite on higher level',
+    mood: 'dynamic',
+    sceneData: {
+      scene: 'Wind scatters water into mist and spray. What was frozen melts. What was stuck dissolves. Ego disperses into something larger. The temple appears.',
+      feel: 'Boundaries dissolving. The ego losing its edges. Liberation through dispersion.',
+      sounds: 'Wind and water mixing. Ice crackling apart. Chanting in the temple.',
+      colors: ['#164e63', '#38bdf8', '#e0e7ff'],
+    },
     lines: ['yin', 'yang', 'yin', 'yin', 'yang', 'yang'],
   },
   {
@@ -752,6 +1238,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'dui',
     judgment: 'Limitation. Success. Galling limitation must not be persevered in.',
     image: 'Water over lake: the image of Limitation. Thus the superior man creates number and measure, and examines the nature of virtue and correct conduct.',
+    essence: 'Boundaries — set limits, but not too restrictive',
+    mood: 'serene',
+    sceneData: {
+      scene: 'Water fills the lake to its banks—no more. The vessel defines the water. Limits make meaning possible. But too tight a vessel and the water turns bitter.',
+      feel: 'The structure of containment. Freedom within bounds. The relief of clear edges.',
+      sounds: 'Water finding its level. The click of joints. Measure and rhythm.',
+      colors: ['#0c4a6e', '#0ea5e9', '#fef3c7'],
+    },
     lines: ['yang', 'yang', 'yin', 'yin', 'yang', 'yin'],
   },
   {
@@ -763,6 +1257,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'dui',
     judgment: 'Inner Truth. Pigs and fishes. Good fortune. It furthers one to cross the great water. Perseverance furthers.',
     image: 'Wind over lake: the image of Inner Truth. Thus the superior man discusses criminal cases in order to delay executions.',
+    essence: 'Sincerity — inner truth reaches even the lowest',
+    mood: 'serene',
+    sceneData: {
+      scene: 'Wind moves over the lake, and the fish in the depths respond. Truth from the center reaches everywhere—even where words cannot go. The heart opens.',
+      feel: 'The vibration of sincerity. Being seen to the core. Transparency that connects.',
+      sounds: 'Wind and water harmonizing. The sound before words. Heartbeats syncing.',
+      colors: ['#1e293b', '#0ea5e9', '#fecdd3'],
+    },
     lines: ['yang', 'yang', 'yin', 'yin', 'yang', 'yang'],
   },
   {
@@ -774,6 +1276,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'gen',
     judgment: 'Preponderance of the Small. Success. Perseverance furthers. Small things may be done; great things should not be done.',
     image: 'Thunder on the mountain: the image of Preponderance of the Small. Thus in his conduct the superior man gives preponderance to reverence.',
+    essence: 'Small steps only — the bird flies low, stay humble',
+    mood: 'gentle',
+    sceneData: {
+      scene: 'A small bird flies over the mountain, staying low. Thunder rumbles but doesn\'t strike. This is not the time for great flights. Keep wings close. Go gently.',
+      feel: 'The wisdom of smallness. Staying beneath the radar. Humility as strategy.',
+      sounds: 'Small wings beating. Distant thunder. Careful footsteps.',
+      colors: ['#1c1917', '#475569', '#a78bfa'],
+    },
     lines: ['yin', 'yin', 'yang', 'yang', 'yin', 'yin'],
   },
   {
@@ -785,6 +1295,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'li',
     judgment: 'After Completion. Success in small matters. Perseverance furthers. At the beginning good fortune, at the end disorder.',
     image: 'Water over fire: the image of the condition in After Completion. Thus the superior man takes thought of misfortune and arms himself against it in advance.',
+    essence: 'Order achieved — everything in place, guard against decay',
+    mood: 'serene',
+    sceneData: {
+      scene: 'Water sits perfectly balanced over fire. Every line in place—yin and yang alternating in perfect order. It\'s complete. But completion is precarious. Entropy waits.',
+      feel: 'The satisfaction of completion. The anxiety of perfection. Nowhere to go but down.',
+      sounds: 'Perfect equilibrium. A held note. The first crack of decay.',
+      colors: ['#0c4a6e', '#f97316', '#e0e7ff'],
+    },
     lines: ['yang', 'yin', 'yang', 'yin', 'yang', 'yin'],
   },
   {
@@ -796,6 +1314,14 @@ export const HEXAGRAMS: Hexagram[] = [
     lowerTrigram: 'kan',
     judgment: 'Before Completion. Success. But if the little fox, after nearly completing the crossing, gets his tail in the water, there is nothing that would further.',
     image: 'Fire over water: the image of the condition before transition. Thus the superior man is careful in the differentiation of things, so that each finds its place.',
+    essence: 'Almost there — transition incomplete, careful at the end',
+    mood: 'tense',
+    sceneData: {
+      scene: 'Fire above, water below—nothing in its proper place yet. A young fox crosses the frozen stream, almost to the other side. Its tail dips into the water. Not yet. Not yet.',
+      feel: 'The tension of almost. The danger of the final step. Infinite possibility.',
+      sounds: 'Ice cracking. Careful breathing. The splash that hasn\'t happened yet.',
+      colors: ['#164e63', '#f97316', '#fcd34d'],
+    },
     lines: ['yin', 'yang', 'yin', 'yang', 'yin', 'yang'],
   },
 ];
