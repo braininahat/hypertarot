@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Hexagram as HexagramData, TRIGRAMS, getHexagramByNumber, Trigram, HexagramMood } from '@/data/iching';
 import { CastLine } from '@/lib/entropy/types';
 import { useMemo } from 'react';
+import { TrigramCompass } from './TrigramCompass';
 
 // Particle/element types for different trigrams
 const TRIGRAM_ELEMENTS: Record<string, { particles: string[]; animation: string }> = {
@@ -455,11 +456,19 @@ export function HexagramReadingDisplay({
 
   return (
     <div className="flex flex-col items-center gap-6 w-full max-w-4xl mx-auto">
+      {/* Trigram Compass Rose — structural overview */}
+      <TrigramCompass
+        primaryHexagram={primaryHexagram}
+        transformedHexagram={transformedHexagram}
+        revealed={revealed}
+        delay={delay}
+      />
+
       {/* Immersive Scene Visualization */}
       <HexagramScene
         hexagram={primaryHexagram}
         revealed={revealed}
-        delay={delay}
+        delay={delay + 0.5}
       />
 
       {/* Reading explanation */}
@@ -467,7 +476,7 @@ export function HexagramReadingDisplay({
         className="text-center max-w-md"
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: revealed ? 1 : 0, y: 0 }}
-        transition={{ delay: delay + 0.5, duration: 0.5 }}
+        transition={{ delay: delay + 1.0, duration: 0.5 }}
       >
         <p className="text-xs text-zinc-500">
           {hasTransformation
@@ -483,7 +492,7 @@ export function HexagramReadingDisplay({
             hexagram={primaryHexagram}
             castLines={castLines}
             revealed={revealed}
-            delay={delay + 0.3}
+            delay={delay + 1.2}
             onClick={() => onHexagramClick?.('primary')}
             size="lg"
             showTrigrams
@@ -497,7 +506,7 @@ export function HexagramReadingDisplay({
             className="flex flex-col items-center justify-center py-8 gap-3"
             initial={{ opacity: 0 }}
             animate={{ opacity: revealed ? 1 : 0 }}
-            transition={{ duration: 0.5, delay: delay + 1 }}
+            transition={{ duration: 0.5, delay: delay + 1.8 }}
           >
             {/* Animated flow */}
             <div className="flex items-center gap-1">
@@ -527,7 +536,7 @@ export function HexagramReadingDisplay({
             <Hexagram
               hexagram={transformedHexagram}
               revealed={revealed}
-              delay={delay + 1.2}
+              delay={delay + 2.0}
               onClick={() => onHexagramClick?.('transformed')}
               size="lg"
               showTrigrams
@@ -543,12 +552,12 @@ export function HexagramReadingDisplay({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: revealed ? 1 : 0, y: 0 }}
-          transition={{ delay: delay + 1.8, duration: 0.6 }}
+          transition={{ delay: delay + 2.6, duration: 0.6 }}
         >
           <HexagramScene
             hexagram={transformedHexagram}
             revealed={revealed}
-            delay={delay + 1.8}
+            delay={delay + 2.6}
           />
         </motion.div>
       )}
@@ -559,7 +568,7 @@ export function HexagramReadingDisplay({
           className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4 max-w-lg text-center"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: revealed ? 1 : 0, y: 0 }}
-          transition={{ duration: 0.5, delay: delay + 2.2 }}
+          transition={{ duration: 0.5, delay: delay + 3.0 }}
         >
           <div className="flex items-center justify-center gap-2 mb-2">
             <motion.span
@@ -585,7 +594,7 @@ export function HexagramReadingDisplay({
         className="bg-zinc-900/60 border border-zinc-700/50 rounded-lg p-4 max-w-xl w-full"
         initial={{ opacity: 0 }}
         animate={{ opacity: revealed ? 1 : 0 }}
-        transition={{ duration: 0.5, delay: delay + 2.5 }}
+        transition={{ duration: 0.5, delay: delay + 3.3 }}
       >
         <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
           <span className="text-amber-400">◈</span> The Essence
