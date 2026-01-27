@@ -449,190 +449,104 @@ export function HexagramReadingDisplay({
   delay = 0,
   onHexagramClick,
 }: HexagramReadingDisplayProps) {
-  const hasTransformation = transformedHexagram !== null && transformedHexagram !== undefined;
+  const hasTransformation = transformedHexagram != null;
   const changingLineNumbers = castLines
     .map((line, i) => (line.isChanging ? i + 1 : null))
     .filter(Boolean) as number[];
 
+  const colors = primaryHexagram.sceneData.colors;
+
   return (
-    <div className="flex flex-col items-center gap-6 w-full max-w-4xl mx-auto">
-      {/* Trigram Compass Rose — structural overview */}
-      <TrigramCompass
-        primaryHexagram={primaryHexagram}
-        transformedHexagram={transformedHexagram}
-        revealed={revealed}
-        delay={delay}
-      />
+    <div className="relative flex flex-col items-center w-full min-h-[70vh]">
+      {/* Full-bleed atmospheric background — mood gradient radiating from center */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `radial-gradient(ellipse at 50% 40%, ${colors[1]}18, ${colors[0]}0a, transparent 70%)`,
+          }}
+        />
+        <AtmosphericParticles
+          upperTrigram={primaryHexagram.upperTrigram}
+          lowerTrigram={primaryHexagram.lowerTrigram}
+          mood={primaryHexagram.mood}
+        />
+      </div>
 
-      {/* Immersive Scene Visualization */}
-      <HexagramScene
-        hexagram={primaryHexagram}
-        revealed={revealed}
-        delay={delay + 0.5}
-      />
+      {/* Content — floating in atmosphere, no containers */}
+      <div className="relative z-10 flex flex-col items-center gap-6 py-8 w-full max-w-lg mx-auto">
 
-      {/* Reading explanation */}
-      <motion.div
-        className="text-center max-w-md"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: revealed ? 1 : 0, y: 0 }}
-        transition={{ delay: delay + 1.0, duration: 0.5 }}
-      >
-        <p className="text-xs text-zinc-500">
-          {hasTransformation
-            ? `${changingLineNumbers.length} line${changingLineNumbers.length > 1 ? 's' : ''} in motion — the situation is transforming`
-            : 'All lines stable — the situation is settled'}
-        </p>
-      </motion.div>
-
-      {/* Hexagram display */}
-      <div className={`flex items-start justify-center gap-4 md:gap-8 flex-wrap`}>
-        <div className="flex flex-col items-center">
-          <Hexagram
-            hexagram={primaryHexagram}
-            castLines={castLines}
+        {/* The compass — hero element, clickable for primary detail */}
+        <motion.div
+          className="cursor-pointer"
+          onClick={() => onHexagramClick?.('primary')}
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.99 }}
+        >
+          <TrigramCompass
+            primaryHexagram={primaryHexagram}
+            transformedHexagram={transformedHexagram}
             revealed={revealed}
-            delay={delay + 1.2}
-            onClick={() => onHexagramClick?.('primary')}
-            size="lg"
-            showTrigrams
-            showEssence
-            label={hasTransformation ? "Now" : "Your Reading"}
+            delay={delay}
           />
-        </div>
+        </motion.div>
 
-        {hasTransformation && (
+        {/* Essence — floating text */}
+        <motion.div
+          className="text-center px-6 max-w-sm"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: revealed ? 1 : 0, y: 0 }}
+          transition={{ delay: delay + 2.5, duration: 0.7 }}
+        >
+          <p className="text-sm text-zinc-300/90 font-serif italic leading-relaxed">
+            {primaryHexagram.essence}
+          </p>
+        </motion.div>
+
+        {/* Transformation line */}
+        {hasTransformation && transformedHexagram && (
           <motion.div
-            className="flex flex-col items-center justify-center py-8 gap-3"
+            className="flex flex-col items-center gap-2 cursor-pointer"
+            onClick={() => onHexagramClick?.('transformed')}
             initial={{ opacity: 0 }}
             animate={{ opacity: revealed ? 1 : 0 }}
-            transition={{ duration: 0.5, delay: delay + 1.8 }}
+            transition={{ delay: delay + 3.0, duration: 0.6 }}
+            whileHover={{ scale: 1.02 }}
           >
-            {/* Animated flow */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
+              {/* Animated transition dots */}
               {[0, 1, 2].map((i) => (
                 <motion.div
                   key={i}
-                  className="w-2 h-2 rounded-full bg-amber-500/60"
-                  animate={{ x: [0, 12, 0], opacity: [0.3, 1, 0.3] }}
+                  className="w-1 h-1 rounded-full bg-zinc-500"
+                  animate={{ opacity: [0.2, 0.7, 0.2] }}
                   transition={{
-                    duration: 1.5,
+                    duration: 1.8,
                     repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: i * 0.15
+                    delay: i * 0.2,
                   }}
                 />
               ))}
-              <span className="text-xl text-amber-500/60 mx-1">→</span>
             </div>
-            <div className="text-[10px] text-zinc-500 text-center uppercase tracking-wider">
-              becoming
-            </div>
+            <p className="text-xs text-zinc-500 font-serif italic">
+              becoming: {transformedHexagram.essence}
+            </p>
           </motion.div>
         )}
 
-        {hasTransformation && transformedHexagram && (
-          <div className="flex flex-col items-center">
-            <Hexagram
-              hexagram={transformedHexagram}
-              revealed={revealed}
-              delay={delay + 2.0}
-              onClick={() => onHexagramClick?.('transformed')}
-              size="lg"
-              showTrigrams
-              showEssence
-              label="Emerging"
-            />
-          </div>
-        )}
+        {/* Status — minimal, almost invisible */}
+        <motion.p
+          className="text-[10px] text-zinc-600 tracking-widest uppercase"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: revealed ? 0.5 : 0 }}
+          transition={{ delay: delay + 3.5, duration: 0.5 }}
+        >
+          {hasTransformation
+            ? `${changingLineNumbers.length} line${changingLineNumbers.length > 1 ? 's' : ''} shifting`
+            : 'all lines stable'}
+          {' \u00b7 tap for text'}
+        </motion.p>
       </div>
-
-      {/* Transformation scene (if applicable) */}
-      {hasTransformation && transformedHexagram && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: revealed ? 1 : 0, y: 0 }}
-          transition={{ delay: delay + 2.6, duration: 0.6 }}
-        >
-          <HexagramScene
-            hexagram={transformedHexagram}
-            revealed={revealed}
-            delay={delay + 2.6}
-          />
-        </motion.div>
-      )}
-
-      {/* Moving Lines Explanation */}
-      {hasTransformation && (
-        <motion.div
-          className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4 max-w-lg text-center"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: revealed ? 1 : 0, y: 0 }}
-          transition={{ duration: 0.5, delay: delay + 3.0 }}
-        >
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <motion.span
-              className="text-amber-400"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-            >
-              ⟳
-            </motion.span>
-            <span className="text-xs text-amber-400 font-medium uppercase tracking-wider">
-              Lines {changingLineNumbers.join(', ')} are in motion
-            </span>
-          </div>
-          <p className="text-xs text-zinc-400">
-            These are the pivot points — where the energy shifts.
-            They show <span className="text-amber-400/80">how</span> the present transforms into what's coming.
-          </p>
-        </motion.div>
-      )}
-
-      {/* Quick Summary */}
-      <motion.div
-        className="bg-zinc-900/60 border border-zinc-700/50 rounded-lg p-4 max-w-xl w-full"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: revealed ? 1 : 0 }}
-        transition={{ duration: 0.5, delay: delay + 3.3 }}
-      >
-        <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-          <span className="text-amber-400">◈</span> The Essence
-        </div>
-
-        <div className="space-y-3">
-          <div>
-            <div className="text-xs text-zinc-400 mb-1">
-              <span className="text-zinc-300 font-medium">{primaryHexagram.name}</span>
-              {' '}—{' '}
-              <span className="text-amber-400/80 italic">{primaryHexagram.essence}</span>
-            </div>
-            <p className="text-xs text-zinc-500 leading-relaxed">
-              {primaryHexagram.judgment.split('.')[0]}.
-            </p>
-          </div>
-
-          {hasTransformation && transformedHexagram && (
-            <div className="border-t border-zinc-800 pt-3">
-              <div className="text-xs text-zinc-400 mb-1">
-                <span className="text-amber-500/60">→</span>{' '}
-                <span className="text-zinc-300 font-medium">{transformedHexagram.name}</span>
-                {' '}—{' '}
-                <span className="text-amber-400/80 italic">{transformedHexagram.essence}</span>
-              </div>
-              <p className="text-xs text-zinc-500 leading-relaxed">
-                {transformedHexagram.judgment.split('.')[0]}.
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div className="mt-3 pt-3 border-t border-zinc-800 text-center">
-          <span className="text-[10px] text-zinc-600">
-            Tap hexagram for full classical text
-          </span>
-        </div>
-      </motion.div>
     </div>
   );
 }

@@ -8,23 +8,19 @@ import { useMemo } from 'react';
 // Clockwise from top: Heaven, Lake, Fire, Thunder, Earth, Mountain, Water, Wind
 const FU_XI_ORDER = ['qian', 'dui', 'li', 'zhen', 'kun', 'gen', 'kan', 'xun'] as const;
 
-// Compute angle for each trigram position on the circle
-// 0 index = top (-PI/2), going clockwise
 function trigramAngle(key: string): number {
   const index = FU_XI_ORDER.indexOf(key as (typeof FU_XI_ORDER)[number]);
   if (index === -1) return 0;
   return -Math.PI / 2 + (index * 2 * Math.PI) / 8;
 }
 
-// The 4 complementary-pair axes
 const AXES = [
-  { from: 'qian', to: 'kun', label: 'FORCE', sublabel: 'creative \u2194 receptive' },
-  { from: 'li', to: 'kan', label: 'AWARENESS', sublabel: 'clinging \u2194 abysmal' },
-  { from: 'dui', to: 'gen', label: 'EXCHANGE', sublabel: 'joyous \u2194 still' },
-  { from: 'zhen', to: 'xun', label: 'MOTION', sublabel: 'arousing \u2194 gentle' },
+  { from: 'qian', to: 'kun', label: 'FORCE' },
+  { from: 'li', to: 'kan', label: 'AWARENESS' },
+  { from: 'dui', to: 'gen', label: 'EXCHANGE' },
+  { from: 'zhen', to: 'xun', label: 'MOTION' },
 ];
 
-// Mood -> chord color mapping
 const MOOD_COLORS: Record<HexagramMood, string> = {
   serene: '#94a3b8',
   tense: '#ef4444',
@@ -69,7 +65,6 @@ export function TrigramCompass({
 
   const hasTransformation = transformedHexagram != null;
 
-  // Pre-compute trigram positions on the circle
   const positions = useMemo(() => {
     const pos: Record<string, { x: number; y: number; angle: number }> = {};
     for (const key of FU_XI_ORDER) {
@@ -83,12 +78,12 @@ export function TrigramCompass({
     return pos;
   }, []);
 
-  // Primary hexagram chord endpoints
+  // Primary chord endpoints
   const pInner = positions[primaryHexagram.lowerTrigram];
   const pOuter = positions[primaryHexagram.upperTrigram];
   const isDoubled = primaryHexagram.lowerTrigram === primaryHexagram.upperTrigram;
 
-  // Transformed hexagram chord endpoints
+  // Transformed chord endpoints
   const tInner = transformedHexagram ? positions[transformedHexagram.lowerTrigram] : null;
   const tOuter = transformedHexagram ? positions[transformedHexagram.upperTrigram] : null;
   const isTransformedDoubled = transformedHexagram
@@ -99,16 +94,11 @@ export function TrigramCompass({
   const chordGlow = MOOD_GLOW[primaryHexagram.mood];
   const tChordColor = transformedHexagram ? MOOD_COLORS[transformedHexagram.mood] : chordColor;
 
-  // Chord midpoint for center label
-  const chordMidX = isDoubled ? pInner.x : (pInner.x + pOuter.x) / 2;
-  const chordMidY = isDoubled ? pInner.y : (pInner.y + pOuter.y) / 2;
-
-  // Chord length as fraction of diameter (0 = doubled/zero, 1 = maximum tension)
+  // Chord length as fraction of diameter for tension readout
   const chordLength = isDoubled
     ? 0
     : Math.sqrt((pOuter.x - pInner.x) ** 2 + (pOuter.y - pInner.y) ** 2) / (2 * radius);
 
-  // Tension description
   const tensionLabel =
     chordLength === 0
       ? 'pure resonance'
@@ -119,6 +109,25 @@ export function TrigramCompass({
           : chordLength > 0.35
             ? 'moderate tension'
             : 'low tension';
+
+  // For migration: effective endpoints (doubled collapses to single point)
+  const fromInner = pInner;
+  const fromOuter = isDoubled ? pInner : pOuter;
+  const toInner = tInner ?? pInner;
+  const toOuter = tOuter
+    ? isTransformedDoubled ? tInner! : tOuter
+    : isDoubled ? pInner : pOuter;
+
+  // Migration timing
+  const migrateDuration = 5;
+  const migrateDelay = delay + 2.5;
+  const migrateTransition = {
+    duration: migrateDuration,
+    repeat: Infinity,
+    repeatType: 'reverse' as const,
+    ease: 'easeInOut' as const,
+    delay: migrateDelay,
+  };
 
   return (
     <motion.div
@@ -134,13 +143,6 @@ export function TrigramCompass({
         className="overflow-visible"
       >
         <defs>
-          <filter id="compass-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="6" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
           <filter id="chord-glow" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="4" result="blur" />
             <feMerge>
@@ -164,7 +166,7 @@ export function TrigramCompass({
           style={{ transformOrigin: `${cx}px ${cy}px` }}
         />
 
-        {/* Inner reference circle (half radius) */}
+        {/* Inner reference circle */}
         <motion.circle
           cx={cx}
           cy={cy}
@@ -178,24 +180,21 @@ export function TrigramCompass({
           style={{ transformOrigin: `${cx}px ${cy}px` }}
         />
 
-        {/* Axis lines - subtle structural connections between complementary pairs */}
+        {/* Axis lines */}
         {AXES.map((axis, i) => {
           const from = positions[axis.from];
           const to = positions[axis.to];
-          // Label at center, offset perpendicular to the axis
           const axisAngle = Math.atan2(to.y - from.y, to.x - from.x);
           const perpAngle = axisAngle + Math.PI / 2;
-          const labelDist = 14 + i * 2; // stagger slightly
+          const labelDist = 14 + i * 2;
           const labelX = cx + labelDist * Math.cos(perpAngle);
           const labelY = cy + labelDist * Math.sin(perpAngle);
 
           return (
             <g key={axis.label}>
               <motion.line
-                x1={from.x}
-                y1={from.y}
-                x2={to.x}
-                y2={to.y}
+                x1={from.x} y1={from.y}
+                x2={to.x} y2={to.y}
                 stroke="rgba(255,255,255,0.06)"
                 strokeWidth={0.75}
                 strokeDasharray="3 6"
@@ -204,8 +203,7 @@ export function TrigramCompass({
                 transition={{ duration: 0.5, delay: delay + 0.3 + i * 0.08 }}
               />
               <motion.text
-                x={labelX}
-                y={labelY}
+                x={labelX} y={labelY}
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fill="rgba(255,255,255,0.12)"
@@ -222,12 +220,122 @@ export function TrigramCompass({
           );
         })}
 
-        {/* === THE CHORD: Primary hexagram === */}
-        {isDoubled ? (
-          /* Doubled trigram: pulsing dot at the shared position */
+        {/* === THE CHORD === */}
+        {hasTransformation ? (
+          /* MIGRATING CHORD — one living chord that oscillates between states */
+          <g>
+            {/* Glow layer */}
+            <motion.line
+              x1={fromInner.x} y1={fromInner.y}
+              x2={fromOuter.x} y2={fromOuter.y}
+              stroke={chordGlow}
+              strokeWidth={6}
+              strokeLinecap="round"
+              filter="url(#chord-glow)"
+              initial={{ opacity: 0 }}
+              animate={{
+                x1: [fromInner.x, toInner.x],
+                y1: [fromInner.y, toInner.y],
+                x2: [fromOuter.x, toOuter.x],
+                y2: [fromOuter.y, toOuter.y],
+                opacity: 0.4,
+              }}
+              transition={{
+                x1: migrateTransition,
+                y1: migrateTransition,
+                x2: migrateTransition,
+                y2: migrateTransition,
+                opacity: { duration: 0.8, delay: delay + 0.9 },
+              }}
+            />
+            {/* Solid chord */}
+            <motion.line
+              x1={fromInner.x} y1={fromInner.y}
+              x2={fromOuter.x} y2={fromOuter.y}
+              stroke={chordColor}
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              initial={{ opacity: 0 }}
+              animate={{
+                x1: [fromInner.x, toInner.x],
+                y1: [fromInner.y, toInner.y],
+                x2: [fromOuter.x, toOuter.x],
+                y2: [fromOuter.y, toOuter.y],
+                opacity: 1,
+              }}
+              transition={{
+                x1: migrateTransition,
+                y1: migrateTransition,
+                x2: migrateTransition,
+                y2: migrateTransition,
+                opacity: { duration: 0.6, delay: delay + 0.9 },
+              }}
+            />
+            {/* Inner endpoint (filled dot) */}
+            <motion.circle
+              cx={fromInner.x} cy={fromInner.y}
+              r={5}
+              fill={chordColor}
+              initial={{ opacity: 0 }}
+              animate={{
+                cx: [fromInner.x, toInner.x],
+                cy: [fromInner.y, toInner.y],
+                opacity: 1,
+              }}
+              transition={{
+                cx: migrateTransition,
+                cy: migrateTransition,
+                opacity: { duration: 0.3, delay: delay + 1.5 },
+              }}
+            />
+            {/* Outer endpoint (ring) */}
+            <motion.circle
+              cx={fromOuter.x} cy={fromOuter.y}
+              r={5}
+              fill="none"
+              stroke={chordColor}
+              strokeWidth={2}
+              initial={{ opacity: 0 }}
+              animate={{
+                cx: [fromOuter.x, toOuter.x],
+                cy: [fromOuter.y, toOuter.y],
+                opacity: 1,
+              }}
+              transition={{
+                cx: migrateTransition,
+                cy: migrateTransition,
+                opacity: { duration: 0.3, delay: delay + 1.6 },
+              }}
+            />
+            {/* Ghost trace: starting position (faint) */}
+            <motion.line
+              x1={fromInner.x} y1={fromInner.y}
+              x2={fromOuter.x} y2={fromOuter.y}
+              stroke={chordColor}
+              strokeWidth={0.75}
+              strokeLinecap="round"
+              strokeDasharray="2 4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.15 }}
+              transition={{ duration: 0.8, delay: delay + 2.5 }}
+            />
+            {/* Ghost trace: destination (faint) */}
+            <motion.line
+              x1={toInner.x} y1={toInner.y}
+              x2={toOuter.x} y2={toOuter.y}
+              stroke={tChordColor}
+              strokeWidth={0.75}
+              strokeLinecap="round"
+              strokeDasharray="2 4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.12 }}
+              transition={{ duration: 0.8, delay: delay + 2.8 }}
+            />
+          </g>
+        ) : isDoubled ? (
+          /* DOUBLED — pulsing dot at the shared position */
           <motion.circle
-            cx={pInner.x}
-            cy={pInner.y}
+            cx={pInner.x} cy={pInner.y}
             r={8}
             fill={chordColor}
             filter="url(#chord-glow)"
@@ -243,8 +351,8 @@ export function TrigramCompass({
             style={{ transformOrigin: `${pInner.x}px ${pInner.y}px` }}
           />
         ) : (
+          /* STATIC CHORD — draw-in animation, no transformation */
           <g>
-            {/* Chord glow layer */}
             <motion.path
               d={`M ${pInner.x} ${pInner.y} L ${pOuter.x} ${pOuter.y}`}
               fill="none"
@@ -256,7 +364,6 @@ export function TrigramCompass({
               animate={{ pathLength: 1, opacity: 0.5 }}
               transition={{ duration: 0.9, delay: delay + 0.9, ease: 'easeOut' }}
             />
-            {/* Chord solid line */}
             <motion.path
               d={`M ${pInner.x} ${pInner.y} L ${pOuter.x} ${pOuter.y}`}
               fill="none"
@@ -267,10 +374,8 @@ export function TrigramCompass({
               animate={{ pathLength: 1, opacity: 1 }}
               transition={{ duration: 0.9, delay: delay + 0.9, ease: 'easeOut' }}
             />
-            {/* Inner endpoint (lower trigram) */}
             <motion.circle
-              cx={pInner.x}
-              cy={pInner.y}
+              cx={pInner.x} cy={pInner.y}
               r={5}
               fill={chordColor}
               initial={{ scale: 0 }}
@@ -278,10 +383,8 @@ export function TrigramCompass({
               transition={{ duration: 0.3, delay: delay + 1.5, type: 'spring' }}
               style={{ transformOrigin: `${pInner.x}px ${pInner.y}px` }}
             />
-            {/* Outer endpoint (upper trigram) — hollow ring to distinguish */}
             <motion.circle
-              cx={pOuter.x}
-              cy={pOuter.y}
+              cx={pOuter.x} cy={pOuter.y}
               r={5}
               fill="none"
               stroke={chordColor}
@@ -292,70 +395,6 @@ export function TrigramCompass({
               style={{ transformOrigin: `${pOuter.x}px ${pOuter.y}px` }}
             />
           </g>
-        )}
-
-        {/* === TRANSFORMATION CHORD (ghost/dashed) === */}
-        {hasTransformation && tInner && tOuter && (
-          isTransformedDoubled ? (
-            <motion.circle
-              cx={tInner.x}
-              cy={tInner.y}
-              r={6}
-              fill="none"
-              stroke={tChordColor}
-              strokeWidth={1.5}
-              strokeDasharray="3 3"
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{
-                scale: [1, 1.3, 1],
-                opacity: [0.3, 0.5, 0.3],
-              }}
-              transition={{
-                scale: { duration: 2.5, repeat: Infinity, ease: 'easeInOut', delay: delay + 2.0 },
-                opacity: { duration: 2.5, repeat: Infinity, ease: 'easeInOut', delay: delay + 2.0 },
-              }}
-              style={{ transformOrigin: `${tInner.x}px ${tInner.y}px` }}
-            />
-          ) : (
-            <g>
-              {/* Transformed chord - dashed */}
-              <motion.path
-                d={`M ${tInner.x} ${tInner.y} L ${tOuter.x} ${tOuter.y}`}
-                fill="none"
-                stroke={tChordColor}
-                strokeWidth={1.5}
-                strokeLinecap="round"
-                strokeDasharray="6 4"
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 0.45 }}
-                transition={{ duration: 0.8, delay: delay + 2.0, ease: 'easeOut' }}
-              />
-              {/* Transformed inner endpoint */}
-              <motion.circle
-                cx={tInner.x}
-                cy={tInner.y}
-                r={3.5}
-                fill={tChordColor}
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 0.45 }}
-                transition={{ duration: 0.3, delay: delay + 2.5 }}
-                style={{ transformOrigin: `${tInner.x}px ${tInner.y}px` }}
-              />
-              {/* Transformed outer endpoint */}
-              <motion.circle
-                cx={tOuter.x}
-                cy={tOuter.y}
-                r={3.5}
-                fill="none"
-                stroke={tChordColor}
-                strokeWidth={1.5}
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 0.45 }}
-                transition={{ duration: 0.3, delay: delay + 2.6 }}
-                style={{ transformOrigin: `${tOuter.x}px ${tOuter.y}px` }}
-              />
-            </g>
-          )
         )}
 
         {/* === TRIGRAM NODES === */}
@@ -369,12 +408,11 @@ export function TrigramCompass({
             ? key === transformedHexagram.lowerTrigram || key === transformedHexagram.upperTrigram
             : false;
 
-          // Push role labels outward
+          // Role label pushed outward
           const outward = nodeR + 14;
           const roleLabelX = cx + (radius + outward) * Math.cos(pos.angle);
           const roleLabelY = cy + (radius + outward) * Math.sin(pos.angle);
 
-          // Determine role text
           let roleText = '';
           if (isDoubled && isActive) {
             roleText = 'DOUBLED';
@@ -398,10 +436,8 @@ export function TrigramCompass({
               }}
               style={{ transformOrigin: `${pos.x}px ${pos.y}px` }}
             >
-              {/* Node background */}
               <circle
-                cx={pos.x}
-                cy={pos.y}
+                cx={pos.x} cy={pos.y}
                 r={nodeR}
                 fill={isActive ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.02)'}
                 stroke={
@@ -414,10 +450,8 @@ export function TrigramCompass({
                 strokeWidth={isActive ? 1.5 : 0.5}
               />
 
-              {/* Trigram unicode symbol */}
               <text
-                x={pos.x}
-                y={pos.y - 5}
+                x={pos.x} y={pos.y - 5}
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fill={isActive ? '#fff' : 'rgba(255,255,255,0.45)'}
@@ -427,10 +461,8 @@ export function TrigramCompass({
                 {trigram.symbol}
               </text>
 
-              {/* Image name (e.g. "Heaven", "Fire") */}
               <text
-                x={pos.x}
-                y={pos.y + 11}
+                x={pos.x} y={pos.y + 11}
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fill={isActive ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.25)'}
@@ -441,11 +473,9 @@ export function TrigramCompass({
                 {trigram.image.split('/')[0]}
               </text>
 
-              {/* Role label (INNER / OUTER / DOUBLED) */}
               {roleText && (
                 <motion.text
-                  x={roleLabelX}
-                  y={roleLabelY}
+                  x={roleLabelX} y={roleLabelY}
                   textAnchor="middle"
                   dominantBaseline="middle"
                   fill={chordColor}
@@ -464,15 +494,14 @@ export function TrigramCompass({
           );
         })}
 
-        {/* Center label: hexagram number */}
+        {/* Center label */}
         <motion.g
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: delay + 1.8, duration: 0.5 }}
         >
           <text
-            x={cx}
-            y={cy - 8}
+            x={cx} y={cy - 8}
             textAnchor="middle"
             dominantBaseline="middle"
             fill="rgba(255,255,255,0.5)"
@@ -482,8 +511,7 @@ export function TrigramCompass({
             {primaryHexagram.chinese}
           </text>
           <text
-            x={cx}
-            y={cy + 12}
+            x={cx} y={cy + 12}
             textAnchor="middle"
             dominantBaseline="middle"
             fill="rgba(255,255,255,0.25)"
@@ -496,75 +524,24 @@ export function TrigramCompass({
         </motion.g>
       </svg>
 
-      {/* Legend / readout below the compass */}
+      {/* Readout — minimal, floating */}
       <motion.div
-        className="flex flex-col items-center gap-2 mt-1 w-full max-w-xs"
-        initial={{ opacity: 0, y: 8 }}
+        className="flex items-center gap-3 mt-2"
+        initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: revealed ? 1 : 0, y: 0 }}
         transition={{ delay: delay + 2.0, duration: 0.5 }}
       >
-        {/* Tension readout */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <div
-              className="w-6 h-[2px] rounded-full"
-              style={{ backgroundColor: chordColor }}
-            />
-            <span className="text-[10px] text-zinc-500 font-mono">
-              {isDoubled ? 'self-referent' : tensionLabel}
-            </span>
-          </div>
-          {!isDoubled && (
-            <span className="text-[10px] text-zinc-600 font-mono">
-              d={chordLength.toFixed(2)}
-            </span>
-          )}
-        </div>
-
-        {/* Chord key */}
-        <div className="flex items-center gap-4 text-[9px] text-zinc-600">
-          <div className="flex items-center gap-1">
-            <svg width="8" height="8"><circle cx="4" cy="4" r="3" fill={chordColor} /></svg>
-            <span>inner</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <svg width="8" height="8"><circle cx="4" cy="4" r="2.5" fill="none" stroke={chordColor} strokeWidth="1.5" /></svg>
-            <span>outer</span>
-          </div>
-          {hasTransformation && (
-            <div className="flex items-center gap-1">
-              <svg width="14" height="2">
-                <line x1="0" y1="1" x2="14" y2="1" stroke={tChordColor} strokeWidth="1.5" strokeDasharray="3 2" opacity="0.5" />
-              </svg>
-              <span>becoming</span>
-            </div>
-          )}
-        </div>
-
-        {/* Transformation summary */}
-        {hasTransformation && transformedHexagram && (
-          <motion.div
-            className="text-[10px] text-zinc-500 text-center mt-1"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: delay + 2.5, duration: 0.4 }}
-          >
-            <span style={{ color: chordColor }}>
-              {TRIGRAMS[primaryHexagram.lowerTrigram].image.split('/')[0]}
-            </span>
-            <span className="text-zinc-700"> {'\u2192'} </span>
-            <span style={{ color: tChordColor, opacity: 0.6 }}>
-              {TRIGRAMS[transformedHexagram.lowerTrigram].image.split('/')[0]}
-            </span>
-            <span className="text-zinc-700 mx-1.5">/</span>
-            <span style={{ color: chordColor }}>
-              {TRIGRAMS[primaryHexagram.upperTrigram].image.split('/')[0]}
-            </span>
-            <span className="text-zinc-700"> {'\u2192'} </span>
-            <span style={{ color: tChordColor, opacity: 0.6 }}>
-              {TRIGRAMS[transformedHexagram.upperTrigram].image.split('/')[0]}
-            </span>
-          </motion.div>
+        <div
+          className="w-5 h-[2px] rounded-full"
+          style={{ backgroundColor: chordColor }}
+        />
+        <span className="text-[10px] text-zinc-500 font-mono">
+          {isDoubled ? 'self-referent' : tensionLabel}
+        </span>
+        {!isDoubled && (
+          <span className="text-[10px] text-zinc-600 font-mono">
+            d={chordLength.toFixed(2)}
+          </span>
         )}
       </motion.div>
     </motion.div>
