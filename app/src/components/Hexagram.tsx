@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Hexagram as HexagramData, TRIGRAMS, getHexagramByNumber, Trigram, HexagramMood } from '@/data/iching';
 import { CastLine } from '@/lib/entropy/types';
 import { useMemo } from 'react';
-import { TrigramCompass } from './TrigramCompass';
+import { HexagramVis3D } from './HexagramVis3D';
 
 // Particle/element types for different trigrams
 const TRIGRAM_ELEMENTS: Record<string, { particles: string[]; animation: string }> = {
@@ -454,77 +454,62 @@ export function HexagramReadingDisplay({
     .map((line, i) => (line.isChanging ? i + 1 : null))
     .filter(Boolean) as number[];
 
-  const colors = primaryHexagram.sceneData.colors;
-
   return (
-    <div className="relative flex flex-col items-center w-full min-h-[70vh]">
-      {/* Full-bleed atmospheric background — mood gradient radiating from center */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div
-          className="absolute inset-0"
-          style={{
-            background: `radial-gradient(ellipse at 50% 40%, ${colors[1]}18, ${colors[0]}0a, transparent 70%)`,
-          }}
+    <div className="relative flex flex-col items-center w-full min-h-[80vh]">
+      {/* 3D visualization — the hero, fills the space */}
+      <div className="relative w-full">
+        <HexagramVis3D
+          primaryHexagram={primaryHexagram}
+          transformedHexagram={transformedHexagram}
         />
-        <AtmosphericParticles
-          upperTrigram={primaryHexagram.upperTrigram}
-          lowerTrigram={primaryHexagram.lowerTrigram}
-          mood={primaryHexagram.mood}
-        />
+
+        {/* Overlaid text — centered over the canvas */}
+        <div className="absolute inset-0 flex flex-col items-center justify-end pb-6 pointer-events-none">
+          {/* Hexagram identity */}
+          <motion.div
+            className="text-center pointer-events-auto cursor-pointer"
+            onClick={() => onHexagramClick?.('primary')}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: revealed ? 1 : 0 }}
+            transition={{ delay: delay + 1.5, duration: 0.8 }}
+          >
+            <div className="text-3xl text-white/40 font-serif">{primaryHexagram.chinese}</div>
+            <div className="text-xs text-zinc-500 tracking-wider mt-1">
+              {primaryHexagram.number}. {primaryHexagram.name}
+            </div>
+          </motion.div>
+        </div>
       </div>
 
-      {/* Content — floating in atmosphere, no containers */}
-      <div className="relative z-10 flex flex-col items-center gap-6 py-8 w-full max-w-lg mx-auto">
-
-        {/* The compass — hero element, clickable for primary detail */}
-        <motion.div
-          className="cursor-pointer"
-          onClick={() => onHexagramClick?.('primary')}
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.99 }}
-        >
-          <TrigramCompass
-            primaryHexagram={primaryHexagram}
-            transformedHexagram={transformedHexagram}
-            revealed={revealed}
-            delay={delay}
-          />
-        </motion.div>
-
-        {/* Essence — floating text */}
-        <motion.div
-          className="text-center px-6 max-w-sm"
+      {/* Text below the canvas — floating, no containers */}
+      <div className="flex flex-col items-center gap-4 px-6 max-w-sm mx-auto -mt-2">
+        {/* Essence */}
+        <motion.p
+          className="text-sm text-zinc-300/90 font-serif italic leading-relaxed text-center"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: revealed ? 1 : 0, y: 0 }}
-          transition={{ delay: delay + 2.5, duration: 0.7 }}
+          transition={{ delay: delay + 2.0, duration: 0.7 }}
         >
-          <p className="text-sm text-zinc-300/90 font-serif italic leading-relaxed">
-            {primaryHexagram.essence}
-          </p>
-        </motion.div>
+          {primaryHexagram.essence}
+        </motion.p>
 
-        {/* Transformation line */}
+        {/* Transformation */}
         {hasTransformation && transformedHexagram && (
           <motion.div
-            className="flex flex-col items-center gap-2 cursor-pointer"
+            className="flex flex-col items-center gap-1 cursor-pointer"
             onClick={() => onHexagramClick?.('transformed')}
             initial={{ opacity: 0 }}
             animate={{ opacity: revealed ? 1 : 0 }}
-            transition={{ delay: delay + 3.0, duration: 0.6 }}
+            transition={{ delay: delay + 2.8, duration: 0.6 }}
             whileHover={{ scale: 1.02 }}
           >
-            <div className="flex items-center gap-2">
-              {/* Animated transition dots */}
+            <div className="flex items-center gap-1.5">
               {[0, 1, 2].map((i) => (
                 <motion.div
                   key={i}
                   className="w-1 h-1 rounded-full bg-zinc-500"
                   animate={{ opacity: [0.2, 0.7, 0.2] }}
-                  transition={{
-                    duration: 1.8,
-                    repeat: Infinity,
-                    delay: i * 0.2,
-                  }}
+                  transition={{ duration: 1.8, repeat: Infinity, delay: i * 0.2 }}
                 />
               ))}
             </div>
@@ -534,12 +519,12 @@ export function HexagramReadingDisplay({
           </motion.div>
         )}
 
-        {/* Status — minimal, almost invisible */}
+        {/* Status whisper */}
         <motion.p
           className="text-[10px] text-zinc-600 tracking-widest uppercase"
           initial={{ opacity: 0 }}
-          animate={{ opacity: revealed ? 0.5 : 0 }}
-          transition={{ delay: delay + 3.5, duration: 0.5 }}
+          animate={{ opacity: revealed ? 0.4 : 0 }}
+          transition={{ delay: delay + 3.2, duration: 0.5 }}
         >
           {hasTransformation
             ? `${changingLineNumbers.length} line${changingLineNumbers.length > 1 ? 's' : ''} shifting`
