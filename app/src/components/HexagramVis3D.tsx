@@ -39,38 +39,38 @@ const TRIGRAM_GEN: Record<string, (n: number) => THREE.Vector3[]> = {
 
   // Thunder — vertical streams erupting
   zhen: (n) => {
-    const pts = [], streams = 12, per = Math.floor(n / streams);
-    for (let s = 0; s < streams; s++) {
+    const pts = [], streams = 12;
+    for (let i = 0; i < n; i++) {
+      const s = i % streams;
       const angle = (s / streams) * Math.PI * 2;
-      for (let i = 0; i < per; i++) {
-        const t = i / per;
-        const spread = 0.15 + t * 0.3;
-        pts.push(new THREE.Vector3(
-          Math.cos(angle) * (1.2 + t * 0.8) + (Math.random() - 0.5) * spread,
-          t * 8 - 4,
-          Math.sin(angle) * (1.2 + t * 0.8) + (Math.random() - 0.5) * spread
-        ));
-      }
+      const t = (i / n) + (Math.random() * 0.1);
+      const spread = 0.15 + t * 0.3;
+      pts.push(new THREE.Vector3(
+        Math.cos(angle) * (1.2 + t * 0.8) + (Math.random() - 0.5) * spread,
+        t * 8 - 4,
+        Math.sin(angle) * (1.2 + t * 0.8) + (Math.random() - 0.5) * spread
+      ));
     }
-    return pts.slice(0, n);
+    return pts;
   },
 
   // Water — helical channel, flowing
   kan: (n) => {
     const pts = [];
-    for (let i = 0; i < n * 0.6; i++) {
-      const theta = (i / (n * 0.6)) * Math.PI * 25;
-      const z = (i / (n * 0.6)) * 10 - 5;
+    const helixCount = Math.floor(n * 0.6);
+    for (let i = 0; i < helixCount; i++) {
+      const theta = (i / helixCount) * Math.PI * 25;
+      const z = (i / helixCount) * 10 - 5;
       const r = 2.2 + Math.sin(z * 0.4) * 0.4;
       pts.push(new THREE.Vector3(Math.cos(theta) * r, Math.sin(theta) * r, z));
     }
-    for (let i = 0; i < n * 0.4; i++) {
+    for (let i = 0; i < n - helixCount; i++) {
       const z = Math.random() * 10 - 5;
       const r = Math.random() * 1.5;
       const theta = Math.random() * Math.PI * 2;
       pts.push(new THREE.Vector3(Math.cos(theta) * r, Math.sin(theta) * r, z));
     }
-    return pts.slice(0, n);
+    return pts;
   },
 
   // Mountain — dense cone tapering to peak
@@ -104,20 +104,19 @@ const TRIGRAM_GEN: Record<string, (n: number) => THREE.Vector3[]> = {
 
   // Fire — rays radiating from core
   li: (n) => {
-    const pts = [], rays = 36, per = Math.floor(n / rays);
-    for (let l = 0; l < rays; l++) {
+    const pts = [], rays = 36;
+    for (let i = 0; i < n; i++) {
+      const l = i % rays;
       const theta = (l / rays) * Math.PI * 2;
       const phi = Math.acos(2 * (l % 18) / 18 - 1);
-      for (let i = 0; i < per; i++) {
-        const t = i / per, r = t * 5.5;
-        pts.push(new THREE.Vector3(
-          r * Math.sin(phi) * Math.cos(theta),
-          r * Math.sin(phi) * Math.sin(theta),
-          r * Math.cos(phi)
-        ));
-      }
+      const t = i / n, r = t * 5.5;
+      pts.push(new THREE.Vector3(
+        r * Math.sin(phi) * Math.cos(theta),
+        r * Math.sin(phi) * Math.sin(theta),
+        r * Math.cos(phi)
+      ));
     }
-    return pts.slice(0, n);
+    return pts;
   },
 
   // Lake — concave surface with radial ripples
