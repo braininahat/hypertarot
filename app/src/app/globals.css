@@ -187,3 +187,20 @@ body {
 .animate-step-enter {
   animation: step-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Pulse ring emanation */
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
+
+/* Orbit rotation for casting particles */
+@keyframes orbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes orbit-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}

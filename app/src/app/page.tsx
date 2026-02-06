@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
+import { useState, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { TarotCard } from '@/components/TarotCard';
 import { Hexagram, HexagramReadingDisplay, HexagramDetail, MiniHexagram } from '@/components/Hexagram';
 import { EntropyIndicator } from '@/components/EntropyIndicator';
@@ -39,44 +39,62 @@ interface IChingReadingData {
 type ReadingData = TarotReadingData | IChingReadingData;
 
 // ─── Ambient particle field ──────────────────────────────────────
-// Always present. Gives the void life before any reading happens.
-function AmbientField({ intensity = 1 }: { intensity?: number }) {
+// Always present. 60 particles with varied sizes, speeds, and glow.
+// Some are bright "fireflies" with halos. Some streak faster.
+function AmbientField({ intensity = 1, system }: { intensity?: number; system?: DivinationSystem | null }) {
   const particles = useMemo(() =>
-    Array.from({ length: 30 }, (_, i) => ({
-      id: i,
-      x: (i * 37 + 13) % 100,
-      y: (i * 53 + 7) % 100,
-      size: 1 + (i % 3) * 0.5,
-      duration: 10 + (i % 7) * 3,
-      delay: i * 0.6,
-      drift: i % 2 === 0 ? 1 : -1,
-    })), []);
+    Array.from({ length: 60 }, (_, i) => {
+      const isBright = i % 7 === 0;
+      const isStreak = i % 11 === 0;
+      return {
+        id: i,
+        x: (i * 37 + 13) % 100,
+        y: (i * 53 + 7) % 100,
+        size: isBright ? 2.5 + (i % 3) : 1 + (i % 3) * 0.5,
+        duration: isStreak ? 5 + (i % 4) * 2 : 10 + (i % 7) * 3,
+        delay: i * 0.35,
+        driftX: ((i * 7 + 3) % 5 - 2) * (isStreak ? 3 : 1),
+        driftY: ((i * 13 + 1) % 5 - 2) * (isStreak ? 4 : 1.5),
+        isBright,
+        isStreak,
+        colorType: i % 5, // 0-2: warm, 3: white, 4: system
+      };
+    }), []);
 
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" style={{ opacity: intensity }}>
-      {particles.map(p => (
-        <motion.div
-          key={p.id}
-          className="absolute rounded-full bg-accent-primary"
-          style={{
-            width: p.size,
-            height: p.size,
-            left: `${p.x}%`,
-            top: `${p.y}%`,
-          }}
-          animate={{
-            y: [0, -40 * p.drift, 0],
-            x: [0, 20 * p.drift, 0],
-            opacity: [0, 0.25, 0],
-          }}
-          transition={{
-            duration: p.duration,
-            delay: p.delay,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
-      ))}
+      {particles.map(p => {
+        let color = 'rgba(201, 165, 74, 0.4)';
+        if (p.colorType === 3) color = 'rgba(255, 255, 255, 0.25)';
+        if (p.colorType === 4 && system === 'tarot') color = 'rgba(124, 58, 237, 0.5)';
+        if (p.colorType === 4 && system === 'iching') color = 'rgba(232, 208, 138, 0.5)';
+        return (
+          <motion.div
+            key={p.id}
+            className="absolute rounded-full"
+            style={{
+              width: p.size,
+              height: p.size,
+              left: `${p.x}%`,
+              top: `${p.y}%`,
+              backgroundColor: color,
+              boxShadow: p.isBright ? `0 0 ${p.size * 6}px ${color}` : 'none',
+            }}
+            animate={{
+              y: [0, -50 * p.driftY, 0],
+              x: [0, 35 * p.driftX, 0],
+              opacity: p.isBright ? [0, 0.9, 0] : p.isStreak ? [0, 0.5, 0] : [0, 0.2, 0],
+              scale: p.isBright ? [0.5, 1.6, 0.5] : [1, 1, 1],
+            }}
+            transition={{
+              duration: p.duration,
+              delay: p.delay,
+              repeat: Infinity,
+              ease: p.isStreak ? 'linear' : 'easeInOut',
+            }}
+          />
+        );
+      })}
     </div>
   );
 }
@@ -390,6 +408,25 @@ export default function Home() {
     setShowDetails(false);
   }, []);
 
+  // ─── Go back one step ───────────────────────────────────────────
+  const goBack = useCallback(() => {
+    if (reading) {
+      // Back from reading → keep system, method, intention
+      setReading(null);
+      setPhase('choose');
+      setShowDetails(false);
+      setSelectedCard(null);
+      setSelectedHexagram(null);
+      setSelectedCastIndex(0);
+      setCopied(false);
+    } else if (system) {
+      // Back from system chosen → clear system
+      setSystem(null);
+      setIntention('');
+      setError(null);
+    }
+  }, [reading, system]);
+
   // ─── I Ching reading helpers ───────────────────────────────────
   const currentCast = reading?.type === 'iching' ? reading.casts[selectedCastIndex] : null;
   const primaryHex = currentCast ? getHexagramByNumber(currentCast.hexagramNumber) : null;
@@ -401,7 +438,7 @@ export default function Home() {
   // =================================================================
   return (
     <main className="min-h-screen flex flex-col items-center p-4 md:p-8 relative">
-      <AmbientField intensity={phase === 'reading' ? 0.3 : 0.8} />
+      <AmbientField intensity={phase === 'reading' ? 0.3 : 0.8} system={system} />
 
       <div className="relative z-10 w-full max-w-2xl mx-auto flex flex-col items-center gap-6 pt-12 pb-24">
 
@@ -434,32 +471,44 @@ export default function Home() {
         </motion.div>
 
         {/* ═══════════════════════════════════════════════════════
-            CONTEXT TRAIL — shows accumulated choices
+            BACK + CONTEXT TRAIL — clickable breadcrumbs
         ═══════════════════════════════════════════════════════ */}
         <AnimatePresence>
-          {hasSystem && phase !== 'casting' && (
+          {(hasSystem || reading) && phase !== 'casting' && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 0.5, height: 'auto' }}
+              animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               className="flex items-center gap-2 text-[10px] font-mono text-text-muted overflow-hidden"
             >
-              <span>{system === 'tarot' ? 'Tarot' : 'I Ching'}</span>
+              <motion.button
+                onClick={goBack}
+                className="text-text-muted/40 hover:text-text-primary transition-colors flex items-center gap-1 shrink-0"
+                whileHover={{ x: -2 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <span className="text-sm">&#8592;</span>
+                <span>back</span>
+              </motion.button>
+              <span className="text-text-muted/20">|</span>
+              <button onClick={() => { if (reading) goBack(); }} className={`transition-colors ${reading ? 'hover:text-text-primary cursor-pointer' : 'cursor-default'}`}>
+                {system === 'tarot' ? 'Tarot' : 'I Ching'}
+              </button>
               {hasMethod && (
                 <>
-                  <span className="text-text-muted/30">·</span>
+                  <span className="text-text-muted/20">·</span>
                   <span>{system === 'tarot' ? selectedSpread.name : selectedIChingSpread.name}</span>
                 </>
               )}
               {reading?.intention && (
                 <>
-                  <span className="text-text-muted/30">·</span>
+                  <span className="text-text-muted/20">·</span>
                   <span className="italic truncate max-w-[140px]">&ldquo;{reading.intention}&rdquo;</span>
                 </>
               )}
               {reading && (
                 <>
-                  <span className="text-text-muted/30">·</span>
+                  <span className="text-text-muted/20">·</span>
                   <EntropyIndicator source={reading.entropySource} />
                 </>
               )}
@@ -472,42 +521,94 @@ export default function Home() {
         ═══════════════════════════════════════════════════════ */}
         <Dissolve show={!hasSystem && phase === 'choose'} className="w-full">
           <div className="flex flex-col items-center gap-8 w-full">
-            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8">
+
+              {/* ─── Tarot oracle button ────────────────────────── */}
               <motion.button
                 onClick={() => setSystem('tarot')}
-                className="group relative px-10 py-8 rounded-2xl border border-violet-500/20 bg-void-deep/50 hover:border-violet-500/50 transition-all w-56"
-                whileHover={{ scale: 1.03, boxShadow: '0 0 40px rgba(124, 58, 237, 0.15)' }}
-                whileTap={{ scale: 0.97 }}
+                className="group relative rounded-2xl w-60 overflow-hidden"
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
               >
-                <span className="text-2xl font-display text-violet-300 group-hover:text-violet-200 transition-colors">Tarot</span>
-                <span className="block text-xs text-text-muted mt-2">78 cards drawn by quantum noise</span>
-                <div className="mt-4 flex justify-center opacity-40 group-hover:opacity-70 transition-opacity">
-                  <div className="flex gap-1">
-                    {[0,1,2].map(i => <div key={i} className="w-4 h-6 rounded-sm bg-violet-500/30 border border-violet-500/20" />)}
+                {/* Rotating gradient border */}
+                <motion.div
+                  className="absolute -inset-[1px] rounded-2xl opacity-40 group-hover:opacity-100 transition-opacity duration-500"
+                  style={{
+                    background: 'conic-gradient(from 0deg, transparent 0%, #7c3aed 20%, transparent 40%, #06b6d4 60%, transparent 80%, #7c3aed 100%)',
+                  }}
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
+                />
+                {/* Background glow on hover */}
+                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+                  style={{ boxShadow: 'inset 0 0 60px rgba(124, 58, 237, 0.15), 0 0 80px rgba(124, 58, 237, 0.15)' }}
+                />
+                {/* Content */}
+                <div className="relative rounded-[15px] m-[1px] bg-void-deep/95 px-10 py-8 flex flex-col items-center">
+                  <span className="text-2xl font-display text-violet-300 group-hover:text-violet-100 transition-colors">Tarot</span>
+                  <span className="block text-xs text-text-muted mt-2">78 cards drawn by quantum noise</span>
+                  <div className="mt-5 flex justify-center opacity-40 group-hover:opacity-90 transition-opacity duration-500">
+                    <div className="flex gap-1.5">
+                      {[0,1,2].map(i => (
+                        <motion.div
+                          key={i}
+                          className="w-5 h-7 rounded-sm bg-violet-500/30 border border-violet-500/30"
+                          animate={{ y: [0, -3, 0] }}
+                          transition={{ duration: 2.5, delay: i * 0.3, repeat: Infinity, ease: 'easeInOut' }}
+                          style={{ boxShadow: '0 0 8px rgba(124, 58, 237, 0.2)' }}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
               </motion.button>
 
               <span className="text-text-muted/20 text-xs font-mono">or</span>
 
+              {/* ─── I Ching oracle button ──────────────────────── */}
               <motion.button
                 onClick={() => setSystem('iching')}
-                className="group relative px-10 py-8 rounded-2xl border border-accent-dim/20 bg-void-deep/50 hover:border-accent-primary/50 transition-all w-56"
-                whileHover={{ scale: 1.03, boxShadow: '0 0 40px rgba(201, 165, 74, 0.12)' }}
-                whileTap={{ scale: 0.97 }}
+                className="group relative rounded-2xl w-60 overflow-hidden"
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
               >
-                <span className="text-2xl font-display text-iching-tertiary group-hover:text-accent-primary transition-colors">I Ching</span>
-                <span className="block text-xs text-text-muted mt-2">64 hexagrams cast by quantum noise</span>
-                <div className="mt-4 flex justify-center opacity-40 group-hover:opacity-70 transition-opacity">
-                  <div className="flex flex-col gap-0.5 items-center">
-                    {[0,1,2,3,4,5].map(i => (
-                      <div key={i} className={`h-[3px] rounded-sm bg-iching-tertiary/40 ${i % 2 === 0 ? 'w-8' : 'w-8 flex gap-1'}`}>
-                        {i % 2 !== 0 && <><div className="flex-1 h-full rounded-sm bg-iching-tertiary/40" /><div className="w-1" /><div className="flex-1 h-full rounded-sm bg-iching-tertiary/40" /></>}
-                      </div>
-                    ))}
+                {/* Rotating gradient border */}
+                <motion.div
+                  className="absolute -inset-[1px] rounded-2xl opacity-40 group-hover:opacity-100 transition-opacity duration-500"
+                  style={{
+                    background: 'conic-gradient(from 0deg, transparent 0%, #c9a54a 20%, transparent 40%, #e8d08a 60%, transparent 80%, #c9a54a 100%)',
+                  }}
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
+                />
+                {/* Background glow on hover */}
+                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+                  style={{ boxShadow: 'inset 0 0 60px rgba(201, 165, 74, 0.1), 0 0 80px rgba(201, 165, 74, 0.12)' }}
+                />
+                {/* Content */}
+                <div className="relative rounded-[15px] m-[1px] bg-void-deep/95 px-10 py-8 flex flex-col items-center">
+                  <span className="text-2xl font-display text-iching-tertiary group-hover:text-accent-primary transition-colors">I Ching</span>
+                  <span className="block text-xs text-text-muted mt-2">64 hexagrams cast by quantum noise</span>
+                  <div className="mt-5 flex justify-center opacity-40 group-hover:opacity-90 transition-opacity duration-500">
+                    <div className="flex flex-col gap-0.5 items-center">
+                      {[0,1,2,3,4,5].map(i => (
+                        <motion.div
+                          key={i}
+                          className={`h-[3px] rounded-sm ${i % 2 === 0 ? 'w-9' : 'w-9 flex gap-1'}`}
+                          animate={{ opacity: [0.3, 0.7, 0.3] }}
+                          transition={{ duration: 3, delay: i * 0.2, repeat: Infinity, ease: 'easeInOut' }}
+                        >
+                          {i % 2 === 0
+                            ? <div className="w-full h-full rounded-sm bg-iching-tertiary/50" style={{ boxShadow: '0 0 6px rgba(232, 208, 138, 0.2)' }} />
+                            : <><div className="flex-1 h-full rounded-sm bg-iching-tertiary/50" style={{ boxShadow: '0 0 6px rgba(232, 208, 138, 0.2)' }} /><div className="w-1.5" /><div className="flex-1 h-full rounded-sm bg-iching-tertiary/50" style={{ boxShadow: '0 0 6px rgba(232, 208, 138, 0.2)' }} /></>
+                          }
+                        </motion.div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </motion.button>
+
             </div>
 
             <p className="text-text-muted/30 text-xs max-w-sm text-center leading-relaxed">
@@ -529,11 +630,12 @@ export default function Home() {
                     onClick={() => setSelectedSpread(spread)}
                     className={`p-3 rounded-xl border transition-all flex flex-col items-center gap-2 ${
                       selectedSpread.id === spread.id
-                        ? 'border-violet-500/50 bg-violet-500/10 glow-quantum'
+                        ? 'border-violet-500/50 bg-violet-500/10'
                         : 'border-zinc-800/50 bg-void-deep/30 hover:border-violet-500/30'
                     }`}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    style={selectedSpread.id === spread.id ? { boxShadow: '0 0 25px rgba(124, 58, 237, 0.2), inset 0 0 15px rgba(124, 58, 237, 0.05)' } : undefined}
+                    whileHover={{ scale: 1.03, boxShadow: '0 0 20px rgba(124, 58, 237, 0.12)' }}
+                    whileTap={{ scale: 0.97 }}
                   >
                     <div className="h-10 flex items-center justify-center">
                       <SpreadDiagram spreadId={spread.id} selected={selectedSpread.id === spread.id} />
@@ -551,11 +653,12 @@ export default function Home() {
                     onClick={() => setSelectedIChingSpread(spread)}
                     className={`p-4 rounded-xl border transition-all flex flex-col items-center gap-3 ${
                       selectedIChingSpread.id === spread.id
-                        ? 'border-accent-primary/40 bg-accent-primary/5 glow-iching'
+                        ? 'border-accent-primary/40 bg-accent-primary/5'
                         : 'border-zinc-800/50 bg-void-deep/30 hover:border-accent-dim/40'
                     }`}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    style={selectedIChingSpread.id === spread.id ? { boxShadow: '0 0 25px rgba(201, 165, 74, 0.15), inset 0 0 15px rgba(201, 165, 74, 0.05)' } : undefined}
+                    whileHover={{ scale: 1.03, boxShadow: '0 0 20px rgba(201, 165, 74, 0.1)' }}
+                    whileTap={{ scale: 0.97 }}
                   >
                     <div className="h-10 flex items-center justify-center text-iching-tertiary">
                       <MiniHexagram />
@@ -584,23 +687,51 @@ export default function Home() {
 
                 {error && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-400 text-sm">{error}</motion.p>}
 
-                <motion.button
-                  onClick={performReading}
-                  disabled={loading}
-                  className={`px-10 py-3.5 rounded-full text-base font-display font-semibold transition-all disabled:opacity-40 ${
-                    system === 'tarot'
-                      ? 'bg-violet-600/80 hover:bg-violet-500/80 text-white glow-quantum'
-                      : 'bg-accent-primary/15 hover:bg-accent-primary/25 text-accent-primary border border-accent-primary/25 glow-iching'
-                  }`}
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  {system === 'tarot' ? 'Draw' : 'Cast'}
-                </motion.button>
-
-                <button onClick={() => { setSystem(null); setIntention(''); }} className="text-text-muted/40 hover:text-text-muted text-xs font-mono transition-colors">
-                  ← change system
-                </button>
+                <div className="relative flex items-center justify-center">
+                  {/* Pulse rings */}
+                  <div
+                    className="absolute w-full h-full rounded-full"
+                    style={{
+                      border: `2px solid ${system === 'tarot' ? 'rgba(124, 58, 237, 0.3)' : 'rgba(201, 165, 74, 0.3)'}`,
+                      animation: 'pulse-ring 2.5s ease-out infinite',
+                    }}
+                  />
+                  <div
+                    className="absolute w-full h-full rounded-full"
+                    style={{
+                      border: `2px solid ${system === 'tarot' ? 'rgba(124, 58, 237, 0.2)' : 'rgba(201, 165, 74, 0.2)'}`,
+                      animation: 'pulse-ring 2.5s ease-out infinite 0.8s',
+                    }}
+                  />
+                  <div
+                    className="absolute w-full h-full rounded-full"
+                    style={{
+                      border: `2px solid ${system === 'tarot' ? 'rgba(124, 58, 237, 0.1)' : 'rgba(201, 165, 74, 0.1)'}`,
+                      animation: 'pulse-ring 2.5s ease-out infinite 1.6s',
+                    }}
+                  />
+                  <motion.button
+                    onClick={performReading}
+                    disabled={loading}
+                    className={`relative z-10 px-12 py-4 rounded-full text-lg font-display font-semibold transition-all disabled:opacity-40 ${
+                      system === 'tarot'
+                        ? 'bg-violet-600/80 hover:bg-violet-500/90 text-white'
+                        : 'bg-accent-primary/15 hover:bg-accent-primary/25 text-accent-primary border border-accent-primary/30'
+                    }`}
+                    style={{
+                      boxShadow: system === 'tarot'
+                        ? '0 0 40px rgba(124, 58, 237, 0.3), inset 0 0 20px rgba(124, 58, 237, 0.1)'
+                        : '0 0 40px rgba(201, 165, 74, 0.2), inset 0 0 20px rgba(201, 165, 74, 0.05)',
+                    }}
+                    whileHover={{ scale: 1.06, boxShadow: system === 'tarot'
+                      ? '0 0 60px rgba(124, 58, 237, 0.4), inset 0 0 30px rgba(124, 58, 237, 0.15)'
+                      : '0 0 60px rgba(201, 165, 74, 0.3), inset 0 0 30px rgba(201, 165, 74, 0.1)',
+                    }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    {system === 'tarot' ? 'Draw' : 'Cast'}
+                  </motion.button>
+                </div>
               </div>
             )}
           </div>
@@ -609,14 +740,58 @@ export default function Home() {
         {/* ═══════════════════════════════════════════════════════
             LAYER 3: CASTING — dissolves in during entropy fetch
         ═══════════════════════════════════════════════════════ */}
-        <Dissolve show={phase === 'casting'} className="flex flex-col items-center gap-6 py-12">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-            className={`w-14 h-14 rounded-full border border-t-transparent ${
-              system === 'tarot' ? 'border-violet-500/30' : 'border-accent-primary/30'
-            }`}
-          />
+        <Dissolve show={phase === 'casting'} className="flex flex-col items-center gap-8 py-12">
+          <div className="relative w-36 h-36 flex items-center justify-center">
+            {/* Outer ring — slow */}
+            <motion.div
+              className={`absolute inset-0 rounded-full border-2 border-dashed ${
+                system === 'tarot' ? 'border-violet-500/15' : 'border-amber-500/15'
+              }`}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
+            />
+            {/* Middle ring — medium, reverse */}
+            <motion.div
+              className={`absolute inset-4 rounded-full border ${
+                system === 'tarot' ? 'border-violet-500/25' : 'border-amber-500/25'
+              }`}
+              animate={{ rotate: -360 }}
+              transition={{ duration: 7, repeat: Infinity, ease: 'linear' }}
+            />
+            {/* Inner ring — fast */}
+            <motion.div
+              className={`absolute inset-8 rounded-full border border-t-transparent border-r-transparent ${
+                system === 'tarot' ? 'border-violet-500/50' : 'border-amber-500/50'
+              }`}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
+            />
+            {/* Center glow */}
+            <motion.div
+              className={`w-4 h-4 rounded-full ${system === 'tarot' ? 'bg-violet-400' : 'bg-amber-400'}`}
+              animate={{ scale: [1, 1.8, 1], opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              style={{ boxShadow: system === 'tarot' ? '0 0 30px rgba(124,58,237,0.6)' : '0 0 30px rgba(201,165,74,0.6)' }}
+            />
+            {/* Orbiting particles */}
+            {[0, 1, 2, 3, 4, 5, 6, 7].map(i => (
+              <motion.div
+                key={i}
+                className={`absolute w-1.5 h-1.5 rounded-full ${system === 'tarot' ? 'bg-violet-300' : 'bg-amber-300'}`}
+                style={{
+                  top: '50%',
+                  left: '50%',
+                  marginTop: -3,
+                  marginLeft: -3,
+                  transformOrigin: `${20 + i * 5}px 0`,
+                  opacity: 0.3 + i * 0.08,
+                  boxShadow: system === 'tarot' ? '0 0 6px rgba(124,58,237,0.5)' : '0 0 6px rgba(201,165,74,0.5)',
+                }}
+                animate={{ rotate: 360 }}
+                transition={{ duration: 3 + i * 0.7, repeat: Infinity, ease: 'linear', delay: i * 0.3 }}
+              />
+            ))}
+          </div>
           <p className="text-sm font-display text-text-primary/40">
             {system === 'tarot' ? 'Drawing...' : 'Casting...'}
           </p>
@@ -756,11 +931,11 @@ export default function Home() {
         {/* ═══════════════════════════════════════════════════════
             LAYER 6: ACTIONS — dissolves in below reading
         ═══════════════════════════════════════════════════════ */}
-        <Dissolve show={isReading} delay={0.3} className="flex flex-col items-center gap-3 w-full max-w-sm pt-4">
+        <Dissolve show={isReading} delay={0.3} className="flex flex-col items-center gap-4 w-full max-w-sm pt-4">
           {!showDetails && (
             <motion.button
               onClick={() => setShowDetails(true)}
-              className="text-text-muted/50 hover:text-text-muted text-xs font-display transition-colors mb-2"
+              className="text-text-muted/50 hover:text-text-muted text-xs font-display transition-colors mb-1 underline underline-offset-4 decoration-text-muted/20 hover:decoration-text-muted/50"
               whileTap={{ scale: 0.97 }}
             >
               Show details
@@ -781,13 +956,25 @@ export default function Home() {
             Paste into Claude, ChatGPT, or any AI. Bring your own subscription — that&apos;s how we keep this free.
           </p>
 
-          <motion.button
-            onClick={reset}
-            className="text-text-muted/40 hover:text-text-muted text-xs font-mono transition-colors mt-2"
-            whileTap={{ scale: 0.97 }}
-          >
-            New reading
-          </motion.button>
+          <div className="flex items-center gap-4 mt-2">
+            <motion.button
+              onClick={goBack}
+              className={`text-xs font-display transition-colors ${
+                system === 'tarot' ? 'text-violet-400/50 hover:text-violet-300' : 'text-accent-primary/50 hover:text-accent-primary'
+              }`}
+              whileTap={{ scale: 0.97 }}
+            >
+              {system === 'tarot' ? 'Redraw' : 'Recast'}
+            </motion.button>
+            <span className="text-text-muted/15 text-xs">·</span>
+            <motion.button
+              onClick={reset}
+              className="text-text-muted/40 hover:text-text-muted text-xs font-mono transition-colors"
+              whileTap={{ scale: 0.97 }}
+            >
+              Start over
+            </motion.button>
+          </div>
         </Dissolve>
       </div>
 
