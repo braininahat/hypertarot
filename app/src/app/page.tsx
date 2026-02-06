@@ -424,11 +424,17 @@ export default function Home() {
               <motion.div className={`absolute inset-4 rounded-full border ${system === 'tarot' ? 'border-violet-500/25' : 'border-amber-500/25'}`} animate={{ rotate: -360 }} transition={{ duration: 7, repeat: Infinity, ease: 'linear' }} />
               <motion.div className={`absolute inset-8 rounded-full border border-t-transparent border-r-transparent ${system === 'tarot' ? 'border-violet-500/50' : 'border-amber-500/50'}`} animate={{ rotate: 360 }} transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }} />
               <motion.div className={`w-4 h-4 rounded-full ${system === 'tarot' ? 'bg-violet-400' : 'bg-amber-400'}`} animate={{ scale: [1, 1.8, 1], opacity: [0.5, 1, 0.5] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }} style={{ boxShadow: system === 'tarot' ? '0 0 30px rgba(124,58,237,0.6)' : '0 0 30px rgba(201,165,74,0.6)' }} />
-              {[0,1,2,3,4,5,6,7].map(i => (
-                <motion.div key={i} className={`absolute w-1.5 h-1.5 rounded-full ${system === 'tarot' ? 'bg-violet-300' : 'bg-amber-300'}`}
-                  style={{ top: '50%', left: '50%', marginTop: -3, marginLeft: -3, transformOrigin: `${20 + i * 5}px 0`, opacity: 0.3 + i * 0.08, boxShadow: system === 'tarot' ? '0 0 6px rgba(124,58,237,0.5)' : '0 0 6px rgba(201,165,74,0.5)' }}
-                  animate={{ rotate: 360 }} transition={{ duration: 3 + i * 0.7, repeat: Infinity, ease: 'linear', delay: i * 0.3 }} />
-              ))}
+              {[0,1,2,3,4,5,6,7].map(i => {
+                const radius = 24 + i * 5;
+                return (
+                  <motion.div key={i} className="absolute" style={{ top: '50%', left: '50%', width: 0, height: 0 }}
+                    animate={{ rotate: [i * 45, i * 45 + (i % 2 === 0 ? 360 : -360)] }}
+                    transition={{ duration: 3 + i * 0.7, repeat: Infinity, ease: 'linear' }}>
+                    <div className={`absolute w-1.5 h-1.5 rounded-full ${system === 'tarot' ? 'bg-violet-300' : 'bg-amber-300'}`}
+                      style={{ top: -3, left: radius - 3, opacity: 0.3 + i * 0.08, boxShadow: system === 'tarot' ? '0 0 8px rgba(124,58,237,0.5)' : '0 0 8px rgba(201,165,74,0.5)' }} />
+                  </motion.div>
+                );
+              })}
             </div>
             <p className="text-sm font-display text-text-primary/40">{system === 'tarot' ? 'Drawing...' : 'Casting...'}</p>
             <EntropyIndicator source="LfD QRNG" loading />
@@ -465,17 +471,42 @@ export default function Home() {
         {isReading && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.4, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="relative z-10 shrink-0 flex flex-col items-center gap-1.5 px-4 pb-3 pt-3 bg-void-deepest/80 backdrop-blur-sm border-t border-text-muted/10">
-            <div className="flex items-center gap-4 flex-wrap justify-center">
-              <motion.button onClick={() => setShowDetails(true)} className="text-text-muted hover:text-text-primary text-xs font-display transition-colors underline underline-offset-4 decoration-text-muted/40" whileTap={{ scale: 0.97 }}>Details</motion.button>
-              <span className="text-text-muted/40 text-xs">·</span>
-              <motion.button onClick={copyReading} className={`text-xs font-display transition-colors ${copied ? 'text-green-400' : 'text-text-muted hover:text-text-primary'}`} whileTap={{ scale: 0.97 }}>{copied ? 'Copied!' : 'Copy for interpretation'}</motion.button>
-              <span className="text-text-muted/40 text-xs">·</span>
-              <motion.button onClick={goBack} className={`text-xs font-display transition-colors ${system === 'tarot' ? 'text-violet-400/80 hover:text-violet-300' : 'text-accent-primary/80 hover:text-accent-primary'}`} whileTap={{ scale: 0.97 }}>{system === 'tarot' ? 'Redraw' : 'Recast'}</motion.button>
-              <span className="text-text-muted/40 text-xs">·</span>
-              <motion.button onClick={reset} className="text-text-muted/60 hover:text-text-muted text-xs font-mono transition-colors" whileTap={{ scale: 0.97 }}>Start over</motion.button>
+            className="relative z-10 shrink-0 flex flex-col items-center gap-3 px-4 pb-4 pt-3">
+            {/* Primary CTA — the whole point of the reading */}
+            <motion.button onClick={copyReading}
+              className={`px-6 py-2 rounded-full text-sm font-display font-medium transition-all ${
+                copied
+                  ? 'bg-green-500/15 text-green-400 border border-green-500/40'
+                  : system === 'tarot'
+                    ? 'bg-violet-500/10 text-violet-200 border border-violet-500/40 hover:bg-violet-500/20 hover:border-violet-500/60'
+                    : 'bg-accent-primary/10 text-accent-primary border border-accent-primary/40 hover:bg-accent-primary/20 hover:border-accent-primary/60'
+              }`}
+              style={{ boxShadow: copied
+                ? '0 0 20px rgba(74, 222, 128, 0.15)'
+                : system === 'tarot'
+                  ? '0 0 25px rgba(124, 58, 237, 0.2), inset 0 0 12px rgba(124, 58, 237, 0.05)'
+                  : '0 0 25px rgba(201, 165, 74, 0.15), inset 0 0 12px rgba(201, 165, 74, 0.05)'
+              }}
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+              {copied ? 'Copied!' : 'Copy for interpretation'}
+            </motion.button>
+            {/* Secondary actions — real buttons, not ghost text */}
+            <div className="flex items-center gap-3">
+              <motion.button onClick={() => setShowDetails(true)}
+                className="px-3 py-1 rounded-full text-[11px] font-display text-text-muted/80 border border-text-muted/20 hover:text-text-primary hover:border-text-muted/40 transition-all"
+                whileTap={{ scale: 0.97 }}>Details</motion.button>
+              <motion.button onClick={goBack}
+                className={`px-3 py-1 rounded-full text-[11px] font-display transition-all ${
+                  system === 'tarot'
+                    ? 'text-violet-300/70 border border-violet-500/20 hover:text-violet-200 hover:border-violet-500/40'
+                    : 'text-accent-primary/70 border border-accent-primary/20 hover:text-accent-primary hover:border-accent-primary/40'
+                }`}
+                whileTap={{ scale: 0.97 }}>{system === 'tarot' ? 'Redraw' : 'Recast'}</motion.button>
+              <motion.button onClick={reset}
+                className="px-3 py-1 text-text-muted/40 hover:text-text-muted/70 text-[10px] font-mono transition-colors"
+                whileTap={{ scale: 0.97 }}>Start over</motion.button>
             </div>
-            <p className="text-text-muted/50 text-[9px] text-center">Copy reading &amp; paste into Claude, ChatGPT, or any AI</p>
+            <p className="text-text-muted/35 text-[9px] text-center">Paste into Claude, ChatGPT, or any AI for meaning</p>
           </motion.div>
         )}
       </AnimatePresence>
