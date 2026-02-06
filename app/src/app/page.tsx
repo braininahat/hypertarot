@@ -448,12 +448,12 @@ export default function Home() {
               <SpreadLayout drawnCards={reading.drawnCards} positions={reading.spread.positions} spreadId={reading.spread.id} selectedCard={selectedCard} setSelectedCard={setSelectedCard} />
             )}
             {reading?.type === 'iching' && primaryHex && (
-              <div className="flex flex-col items-center w-full">
+              <div className="relative flex flex-col items-center w-full">
                 {reading.casts.length > 1 && (
-                  <div className="flex gap-2 mb-4">
+                  <div className="absolute top-3 z-10 flex gap-2">
                     {reading.casts.map((_, index) => (
                       <button key={index} onClick={() => setSelectedCastIndex(index)}
-                        className={`px-4 py-1.5 rounded-full text-xs font-display transition-all ${selectedCastIndex === index ? 'bg-accent-primary/15 text-accent-primary border border-accent-primary/30' : 'text-text-muted hover:text-text-primary border border-zinc-800/50'}`}>
+                        className={`px-4 py-1.5 rounded-full text-xs font-display backdrop-blur-sm transition-all ${selectedCastIndex === index ? 'bg-accent-primary/15 text-accent-primary border border-accent-primary/30' : 'text-text-muted hover:text-text-primary border border-zinc-800/50 bg-void-deep/50'}`}>
                         {reading.casts.length === 2 ? (index === 0 ? 'Past' : 'Future') : `Cast ${index + 1}`}
                       </button>
                     ))}
