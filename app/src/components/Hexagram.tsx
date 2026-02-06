@@ -514,7 +514,7 @@ export function HexagramReadingDisplay({
               ))}
             </div>
             <p className="text-xs text-zinc-500 font-serif italic">
-              becoming: {transformedHexagram.essence}
+              → {transformedHexagram.number}. {transformedHexagram.name}
             </p>
           </motion.div>
         )}
@@ -527,9 +527,9 @@ export function HexagramReadingDisplay({
           transition={{ delay: delay + 3.2, duration: 0.5 }}
         >
           {hasTransformation
-            ? `${changingLineNumbers.length} line${changingLineNumbers.length > 1 ? 's' : ''} shifting`
-            : 'all lines stable'}
-          {' \u00b7 tap for text'}
+            ? `${changingLineNumbers.length} changing`
+            : 'no changing lines'}
+          {' \u00b7 tap for detail'}
         </motion.p>
       </div>
     </div>
@@ -654,17 +654,11 @@ export function HexagramDetail({ hexagram, castLines, onClose }: HexagramDetailP
         {/* Changing Lines */}
         {changingLineNumbers.length > 0 && (
           <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
-            <div className="text-amber-500 text-xs uppercase tracking-wider mb-2 flex items-center gap-2">
-              <motion.span
-                animate={{ rotate: 360 }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-              >
-                ⟳
-              </motion.span>
-              Moving Lines: {changingLineNumbers.join(', ')}
+            <div className="text-amber-500 text-xs uppercase tracking-wider mb-2">
+              Changing Lines: {changingLineNumbers.join(', ')}
             </div>
             <div className="text-zinc-300 text-sm">
-              These lines are shifting — the pivot points where your situation transforms.
+              Lines {changingLineNumbers.join(', ')}
             </div>
           </div>
         )}

@@ -1,31 +1,37 @@
 @import "tailwindcss";
 
 :root {
-  /* Backgrounds - Deep space void */
-  --void-deepest: #0a0a0f;
-  --void-deep: #12121a;
-  --void-mid: #1a1a25;
+  /* Backgrounds - Deep void */
+  --void-deepest: #06060b;
+  --void-deep: #0c0c14;
+  --void-mid: #13131e;
 
-  /* Accents - Quantum glow (Tarot) */
+  /* Primary accent - warm organic */
+  --accent-primary: #c9a54a;
+  --accent-secondary: #a08030;
+  --accent-dim: #7a6228;
+
+  /* Tarot-specific accents */
   --quantum-primary: #7c3aed;
   --quantum-secondary: #06b6d4;
   --quantum-tertiary: #f59e0b;
 
-  /* Accents - I Ching */
-  --iching-primary: #d97706;
-  --iching-secondary: #ea580c;
-  --iching-tertiary: #fbbf24;
+  /* I Ching accents */
+  --iching-primary: #c9a54a;
+  --iching-secondary: #a08030;
+  --iching-tertiary: #e8d08a;
 
   /* Text */
-  --text-primary: #f4f4f5;
-  --text-muted: #a1a1aa;
+  --text-primary: #e8e4dc;
+  --text-muted: #8a8678;
   --text-mystic: #c4b5fd;
-  --text-iching: #fcd34d;
+  --text-iching: #e8d08a;
 
   /* Effects */
-  --glow-quantum: 0 0 30px rgba(124, 58, 237, 0.3);
-  --glow-reveal: 0 0 60px rgba(245, 158, 11, 0.5);
-  --glow-iching: 0 0 30px rgba(217, 119, 6, 0.3);
+  --glow-quantum: 0 0 30px rgba(124, 58, 237, 0.2);
+  --glow-reveal: 0 0 60px rgba(201, 165, 74, 0.3);
+  --glow-iching: 0 0 30px rgba(201, 165, 74, 0.2);
+  --glow-soft: 0 0 40px rgba(201, 165, 74, 0.08);
 }
 
 @theme inline {
@@ -42,6 +48,8 @@
   --color-text-muted: var(--text-muted);
   --color-text-mystic: var(--text-mystic);
   --color-text-iching: var(--text-iching);
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-dim: var(--accent-dim);
 }
 
 body {
@@ -72,6 +80,10 @@ body {
 
 .glow-reveal {
   box-shadow: var(--glow-reveal);
+}
+
+.glow-soft {
+  box-shadow: var(--glow-soft);
 }
 
 /* Breathing animation for intention screen */
@@ -120,13 +132,75 @@ body {
   background-clip: text;
 }
 
-/* Star field background */
+/* Ambient void background with drifting particles */
 .bg-starfield {
   background-image:
-    radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,0.3), transparent),
-    radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.2), transparent),
-    radial-gradient(1px 1px at 90px 40px, rgba(255,255,255,0.4), transparent),
-    radial-gradient(2px 2px at 130px 80px, rgba(255,255,255,0.2), transparent),
-    radial-gradient(1px 1px at 160px 120px, rgba(255,255,255,0.3), transparent);
-  background-size: 200px 200px;
+    radial-gradient(1.5px 1.5px at 15% 20%, rgba(201, 165, 74, 0.15), transparent),
+    radial-gradient(1px 1px at 45% 15%, rgba(201, 165, 74, 0.1), transparent),
+    radial-gradient(1.5px 1.5px at 75% 35%, rgba(255, 255, 255, 0.08), transparent),
+    radial-gradient(1px 1px at 25% 60%, rgba(201, 165, 74, 0.08), transparent),
+    radial-gradient(1px 1px at 85% 70%, rgba(255, 255, 255, 0.06), transparent),
+    radial-gradient(1.5px 1.5px at 55% 85%, rgba(201, 165, 74, 0.12), transparent),
+    radial-gradient(1px 1px at 10% 90%, rgba(255, 255, 255, 0.05), transparent),
+    radial-gradient(1px 1px at 65% 50%, rgba(201, 165, 74, 0.06), transparent);
+  background-size: 280px 280px;
+}
+
+/* Ambient floating particles via CSS */
+@keyframes drift-1 {
+  0%, 100% { transform: translate(0, 0); opacity: 0; }
+  10% { opacity: 0.4; }
+  90% { opacity: 0.4; }
+  50% { transform: translate(30px, -60px); }
+}
+
+@keyframes drift-2 {
+  0%, 100% { transform: translate(0, 0); opacity: 0; }
+  15% { opacity: 0.3; }
+  85% { opacity: 0.3; }
+  50% { transform: translate(-20px, -80px); }
+}
+
+@keyframes drift-3 {
+  0%, 100% { transform: translate(0, 0); opacity: 0; }
+  20% { opacity: 0.25; }
+  80% { opacity: 0.25; }
+  50% { transform: translate(15px, -50px); }
+}
+
+/* Step navigation dot pulse */
+@keyframes dot-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 165, 74, 0.4); }
+  50% { box-shadow: 0 0 0 4px rgba(201, 165, 74, 0); }
+}
+
+.animate-dot-pulse {
+  animation: dot-pulse 2s ease-in-out infinite;
+}
+
+/* Smooth step transitions */
+@keyframes step-enter {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-step-enter {
+  animation: step-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Pulse ring emanation */
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
+
+/* Orbit rotation for casting particles */
+@keyframes orbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes orbit-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
 }
