@@ -448,22 +448,22 @@ export default function Home() {
               <SpreadLayout drawnCards={reading.drawnCards} positions={reading.spread.positions} spreadId={reading.spread.id} selectedCard={selectedCard} setSelectedCard={setSelectedCard} />
             )}
             {reading?.type === 'iching' && primaryHex && (
-              <div className="relative flex flex-col items-center w-full">
-                {reading.casts.length > 1 && (
-                  <div className="absolute top-3 z-10 flex gap-2">
-                    {reading.casts.map((_, index) => (
-                      <button key={index} onClick={() => setSelectedCastIndex(index)}
-                        className={`px-4 py-1.5 rounded-full text-xs font-display backdrop-blur-sm transition-all ${selectedCastIndex === index ? 'bg-accent-primary/15 text-accent-primary border border-accent-primary/30' : 'text-text-muted hover:text-text-primary border border-zinc-800/50 bg-void-deep/50'}`}>
-                        {reading.casts.length === 2 ? (index === 0 ? 'Past' : 'Future') : `Cast ${index + 1}`}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <HexagramReadingDisplay primaryHexagram={primaryHex} transformedHexagram={transformedHex} castLines={currentCast!.lines as [CastLine, CastLine, CastLine, CastLine, CastLine, CastLine]} revealed={true} onHexagramClick={(type) => setSelectedHexagram(type)} />
-              </div>
+              <HexagramReadingDisplay primaryHexagram={primaryHex} transformedHexagram={transformedHex} castLines={currentCast!.lines as [CastLine, CastLine, CastLine, CastLine, CastLine, CastLine]} revealed={true} onHexagramClick={(type) => setSelectedHexagram(type)} />
             )}
           </div>
         </Dissolve>
+
+        {/* I Ching cast switcher — outside Dissolve so it won't be clipped by flex centering */}
+        {isReading && reading?.type === 'iching' && reading.casts.length > 1 && (
+          <div className="absolute top-3 left-0 right-0 z-20 flex justify-center gap-2">
+            {reading.casts.map((_, index) => (
+              <button key={index} onClick={() => setSelectedCastIndex(index)}
+                className={`px-4 py-1.5 rounded-full text-xs font-display backdrop-blur-sm transition-all ${selectedCastIndex === index ? 'bg-accent-primary/15 text-accent-primary border border-accent-primary/30' : 'text-text-muted hover:text-text-primary border border-zinc-800/50 bg-void-deep/50'}`}>
+                {reading.casts.length === 2 ? (index === 0 ? 'Past' : 'Future') : `Cast ${index + 1}`}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ═══ BOTTOM BAR: actions pinned at viewport bottom ═══ */}
