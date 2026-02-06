@@ -62,45 +62,22 @@ export const ICHING_SPREADS: IChing_Spread[] = [
   {
     id: 'single-hexagram',
     name: 'Single Hexagram',
-    description: 'Cast one hexagram with changing lines to reveal present situation and its transformation',
-    interpretPrompt: `Please interpret this I Ching reading. You have been given a primary hexagram and, if there are changing lines, a transformed hexagram.
+    description: 'One hexagram cast with changing lines and its transformation',
+    interpretPrompt: `Please interpret this I Ching reading. A primary hexagram has been cast. If there are changing lines, a transformed hexagram is also shown.
 
-For the interpretation:
-1. Begin with the primary hexagram's overall meaning and how it relates to the querent's situation
-2. Examine each changing line specifically - these are the active, dynamic points of the reading
-3. If there is a transformed hexagram, explain how the situation is evolving from the primary state to this new state
-4. The changing lines bridge the two hexagrams - they show the process of transformation
-
-Remember: Changing lines (old yang ⚊○ and old yin ⚋×) are where the energy is most active. They indicate where change is happening or needs to happen.`,
+Changing lines (old yang becoming yin, old yin becoming yang) indicate where transition is occurring. If a transformed hexagram is present, it shows what the primary hexagram is moving toward.`,
   },
   {
     id: 'past-future',
     name: 'Past & Future',
-    description: 'Two separate castings: one for where you have been, one for where you are going',
-    interpretPrompt: `Please interpret this two-hexagram I Ching reading showing Past and Future.
-
-The first hexagram (with its changing lines and transformation) represents the past - the energies and patterns that have shaped the current moment.
-
-The second hexagram (with its changing lines and transformation) represents the future - the energies and patterns that are emerging.
-
-Consider:
-1. What story does the past hexagram tell about how the querent arrived at this moment?
-2. What is the future hexagram suggesting about the path ahead?
-3. How do these two readings relate to each other? Is there continuity, contrast, or evolution?
-4. Pay special attention to any trigrams that appear in both readings - they may indicate persistent themes.`,
+    description: 'Two separate castings: one representing the past, one representing the future',
+    interpretPrompt: `Please interpret this two-hexagram I Ching reading. The first hexagram represents the past. The second hexagram represents the future. Each has its own changing lines and potential transformation.`,
   },
   {
     id: 'three-coins',
     name: 'Three Questions',
-    description: 'Three separate castings for three related aspects of a situation',
-    interpretPrompt: `Please interpret this three-hexagram I Ching reading addressing three aspects of the querent's situation.
-
-Each hexagram represents a different facet or question:
-1. The first hexagram: The situation as it currently stands
-2. The second hexagram: The challenge or obstacle
-3. The third hexagram: The guidance or way forward
-
-Analyze each hexagram with its changing lines and transformations, then synthesize how they work together to illuminate the querent's path.`,
+    description: 'Three separate castings for three aspects of a situation',
+    interpretPrompt: `Please interpret this three-hexagram I Ching reading. Three separate hexagrams have been cast, each with its own changing lines and potential transformation. Analyze each hexagram and consider how they relate to one another.`,
   },
 ];
 
