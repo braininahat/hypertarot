@@ -180,17 +180,18 @@ export function HexagramVis3D({ primaryHexagram, transformedHexagram }: Hexagram
     targetMood: transformedHexagram?.mood ?? primaryHexagram.mood,
   });
 
-  // Camera control state
+  // Camera control state with inertia
   const cameraRef = useRef({
     theta: 0,        // horizontal angle
     phi: Math.PI / 2, // vertical angle (start at equator)
     radius: 14,
-    targetTheta: 0,
-    targetPhi: Math.PI / 2,
-    targetRadius: 14,
+    velocityTheta: 0,
+    velocityPhi: 0,
+    velocityRadius: 0,
     isDragging: false,
     lastX: 0,
     lastY: 0,
+    lastTime: 0,
     autoRotate: true,
   });
 
@@ -282,7 +283,7 @@ export function HexagramVis3D({ primaryHexagram, transformedHexagram }: Hexagram
     const lines = new THREE.LineSegments(lineGeo, lineMat);
     scene.add(lines);
 
-    // --- Mouse/touch interaction ---
+    // --- Mouse/touch interaction with inertia ---
     const cam = cameraRef.current;
 
     const onPointerDown = (e: PointerEvent) => {
@@ -290,27 +291,42 @@ export function HexagramVis3D({ primaryHexagram, transformedHexagram }: Hexagram
       cam.autoRotate = false;
       cam.lastX = e.clientX;
       cam.lastY = e.clientY;
+      cam.lastTime = Date.now();
+      // Kill existing velocity when grabbing
+      cam.velocityTheta = 0;
+      cam.velocityPhi = 0;
       container.setPointerCapture(e.pointerId);
     };
 
     const onPointerMove = (e: PointerEvent) => {
       if (!cam.isDragging) return;
+      const now = Date.now();
+      const dt = Math.max(1, now - cam.lastTime) / 1000;
       const dx = e.clientX - cam.lastX;
       const dy = e.clientY - cam.lastY;
-      cam.targetTheta -= dx * 0.005;
-      cam.targetPhi = Math.max(0.1, Math.min(Math.PI - 0.1, cam.targetPhi - dy * 0.005));
+
+      // Update position directly while dragging
+      cam.theta -= dx * 0.005;
+      cam.phi = Math.max(0.1, Math.min(Math.PI - 0.1, cam.phi - dy * 0.005));
+
+      // Track velocity for inertia (smoothed)
+      cam.velocityTheta = cam.velocityTheta * 0.5 + (dx * 0.005 / dt) * 0.5;
+      cam.velocityPhi = cam.velocityPhi * 0.5 + (dy * 0.005 / dt) * 0.5;
+
       cam.lastX = e.clientX;
       cam.lastY = e.clientY;
+      cam.lastTime = now;
     };
 
     const onPointerUp = (e: PointerEvent) => {
       cam.isDragging = false;
       container.releasePointerCapture(e.pointerId);
+      // Velocity is already set from tracking in onPointerMove
     };
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      cam.targetRadius = Math.max(6, Math.min(30, cam.targetRadius + e.deltaY * 0.01));
+      cam.velocityRadius += e.deltaY * 0.002;
     };
 
     container.addEventListener('pointerdown', onPointerDown);
@@ -421,13 +437,31 @@ export function HexagramVis3D({ primaryHexagram, transformedHexagram }: Hexagram
       lineGeo.attributes.position.needsUpdate = true;
       lineMat.color.copy(col);
 
-      // Camera: smooth interpolation to target
-      if (cam.autoRotate) {
-        cam.targetTheta += 0.003;
+      // Camera: apply velocity with friction (inertial)
+      if (!cam.isDragging) {
+        // Apply inertia
+        cam.theta -= cam.velocityTheta * 0.016; // ~60fps timestep
+        cam.phi -= cam.velocityPhi * 0.016;
+        cam.radius += cam.velocityRadius;
+
+        // Friction decay
+        cam.velocityTheta *= 0.95;
+        cam.velocityPhi *= 0.95;
+        cam.velocityRadius *= 0.9;
+
+        // Clamp phi
+        cam.phi = Math.max(0.1, Math.min(Math.PI - 0.1, cam.phi));
+        // Clamp radius
+        cam.radius = Math.max(6, Math.min(30, cam.radius));
+
+        // Auto-rotate when velocity dies down
+        if (Math.abs(cam.velocityTheta) < 0.01 && Math.abs(cam.velocityPhi) < 0.01) {
+          cam.autoRotate = true;
+        }
+        if (cam.autoRotate) {
+          cam.theta += 0.002;
+        }
       }
-      cam.theta += (cam.targetTheta - cam.theta) * 0.08;
-      cam.phi += (cam.targetPhi - cam.phi) * 0.08;
-      cam.radius += (cam.targetRadius - cam.radius) * 0.08;
 
       camera.position.x = cam.radius * Math.sin(cam.phi) * Math.cos(cam.theta);
       camera.position.y = cam.radius * Math.cos(cam.phi);
