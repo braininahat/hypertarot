@@ -305,12 +305,12 @@ export function HexagramVis3D({ primaryHexagram, transformedHexagram }: Hexagram
       const dx = e.clientX - cam.lastX;
       const dy = e.clientY - cam.lastY;
 
-      // Update position directly while dragging
-      cam.theta -= dx * 0.005;
+      // Update position directly while dragging (x inverted for natural feel)
+      cam.theta += dx * 0.005;
       cam.phi = Math.max(0.1, Math.min(Math.PI - 0.1, cam.phi - dy * 0.005));
 
-      // Track velocity for inertia (smoothed)
-      cam.velocityTheta = cam.velocityTheta * 0.5 + (dx * 0.005 / dt) * 0.5;
+      // Track velocity for inertia (smoothed, x inverted)
+      cam.velocityTheta = cam.velocityTheta * 0.5 + (-dx * 0.005 / dt) * 0.5;
       cam.velocityPhi = cam.velocityPhi * 0.5 + (dy * 0.005 / dt) * 0.5;
 
       cam.lastX = e.clientX;
