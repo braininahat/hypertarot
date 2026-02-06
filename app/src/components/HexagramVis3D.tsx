@@ -7,12 +7,29 @@ import { Hexagram as HexagramData, HexagramMood } from '@/data/iching';
 const N = 1500;
 const HALF = N / 2;
 
-// --- Geometry generators: one per trigram ---
-// Chosen for visual impact and distinctness.
-// Each returns `n` THREE.Vector3 points.
+// Seeded PRNG for deterministic geometry
+function mulberry32(seed: number) {
+  return () => {
+    let t = (seed += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
 
+// Sort points by spherical angle for optimal transport matching
+function sortByAngle(pts: THREE.Vector3[]): THREE.Vector3[] {
+  return [...pts].sort((a, b) => {
+    const thetaA = Math.atan2(a.z, a.x);
+    const thetaB = Math.atan2(b.z, b.x);
+    if (Math.abs(thetaA - thetaB) > 0.01) return thetaA - thetaB;
+    return a.y - b.y;
+  });
+}
+
+// --- Geometry generators: deterministic, one per trigram ---
 const TRIGRAM_GEN: Record<string, (n: number) => THREE.Vector3[]> = {
-  // Heaven — fibonacci sphere, radiating outward
+  // Heaven — fibonacci sphere
   qian: (n) => {
     const pts = [], phi_g = Math.PI * (3 - Math.sqrt(5));
     for (let i = 0; i < n; i++) {
@@ -21,10 +38,10 @@ const TRIGRAM_GEN: Record<string, (n: number) => THREE.Vector3[]> = {
       const theta = phi_g * i;
       pts.push(new THREE.Vector3(Math.cos(theta) * r * 4, y * 4, Math.sin(theta) * r * 4));
     }
-    return pts;
+    return sortByAngle(pts);
   },
 
-  // Earth — flat grid, barely breathing
+  // Earth — flat breathing grid
   kun: (n) => {
     const pts = [], side = Math.sqrt(n) | 0;
     for (let i = 0; i < n; i++) {
@@ -34,29 +51,29 @@ const TRIGRAM_GEN: Record<string, (n: number) => THREE.Vector3[]> = {
         (Math.floor(i / side) / side - 0.5) * 9
       ));
     }
-    return pts;
+    return sortByAngle(pts);
   },
 
   // Thunder — vertical streams erupting
   zhen: (n) => {
-    const pts = [], streams = 12;
+    const pts = [], streams = 12, rand = mulberry32(3);
     for (let i = 0; i < n; i++) {
       const s = i % streams;
       const angle = (s / streams) * Math.PI * 2;
-      const t = (i / n) + (Math.random() * 0.1);
+      const t = (i / n) + (rand() * 0.1);
       const spread = 0.15 + t * 0.3;
       pts.push(new THREE.Vector3(
-        Math.cos(angle) * (1.2 + t * 0.8) + (Math.random() - 0.5) * spread,
+        Math.cos(angle) * (1.2 + t * 0.8) + (rand() - 0.5) * spread,
         t * 8 - 4,
-        Math.sin(angle) * (1.2 + t * 0.8) + (Math.random() - 0.5) * spread
+        Math.sin(angle) * (1.2 + t * 0.8) + (rand() - 0.5) * spread
       ));
     }
-    return pts;
+    return sortByAngle(pts);
   },
 
-  // Water — helical channel, flowing
+  // Water — helical channel
   kan: (n) => {
-    const pts = [];
+    const pts = [], rand = mulberry32(4);
     const helixCount = Math.floor(n * 0.6);
     for (let i = 0; i < helixCount; i++) {
       const theta = (i / helixCount) * Math.PI * 25;
@@ -65,41 +82,41 @@ const TRIGRAM_GEN: Record<string, (n: number) => THREE.Vector3[]> = {
       pts.push(new THREE.Vector3(Math.cos(theta) * r, Math.sin(theta) * r, z));
     }
     for (let i = 0; i < n - helixCount; i++) {
-      const z = Math.random() * 10 - 5;
-      const r = Math.random() * 1.5;
-      const theta = Math.random() * Math.PI * 2;
+      const z = rand() * 10 - 5;
+      const r = rand() * 1.5;
+      const theta = rand() * Math.PI * 2;
       pts.push(new THREE.Vector3(Math.cos(theta) * r, Math.sin(theta) * r, z));
     }
-    return pts;
+    return sortByAngle(pts);
   },
 
   // Mountain — dense cone tapering to peak
   gen: (n) => {
-    const pts = [];
+    const pts = [], rand = mulberry32(5);
     for (let i = 0; i < n; i++) {
-      const t = Math.pow(Math.random(), 0.55);
+      const t = Math.pow(rand(), 0.55);
       const y = t * 7 - 2;
       const spread = (1 - t) * 3.5 + 0.1;
-      const theta = Math.random() * Math.PI * 2;
+      const theta = rand() * Math.PI * 2;
       pts.push(new THREE.Vector3(Math.cos(theta) * spread, y, Math.sin(theta) * spread));
     }
-    return pts;
+    return sortByAngle(pts);
   },
 
-  // Wind — dispersed, drifting in layers
+  // Wind — dispersed drifting layers
   xun: (n) => {
-    const pts = [];
+    const pts = [], rand = mulberry32(6);
     for (let i = 0; i < n; i++) {
-      const r = Math.pow(Math.random(), 0.35) * 5;
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(2 * Math.random() - 1);
+      const r = Math.pow(rand(), 0.35) * 5;
+      const theta = rand() * Math.PI * 2;
+      const phi = Math.acos(2 * rand() - 1);
       pts.push(new THREE.Vector3(
         r * Math.sin(phi) * Math.cos(theta),
         r * Math.sin(phi) * Math.sin(theta) * 0.4,
         r * Math.cos(phi)
       ));
     }
-    return pts;
+    return sortByAngle(pts);
   },
 
   // Fire — rays radiating from core
@@ -116,7 +133,7 @@ const TRIGRAM_GEN: Record<string, (n: number) => THREE.Vector3[]> = {
         r * Math.cos(phi)
       ));
     }
-    return pts;
+    return sortByAngle(pts);
   },
 
   // Lake — concave surface with radial ripples
@@ -129,7 +146,7 @@ const TRIGRAM_GEN: Record<string, (n: number) => THREE.Vector3[]> = {
       const y = Math.sin(dist * 12) * 0.7 * Math.max(0, 1 - dist * 1.5);
       pts.push(new THREE.Vector3(x * 10, y, z * 10));
     }
-    return pts;
+    return sortByAngle(pts);
   },
 };
 
@@ -151,6 +168,8 @@ interface HexagramVis3DProps {
 
 export function HexagramVis3D({ primaryHexagram, transformedHexagram }: HexagramVis3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Track current state for morphing
   const stateRef = useRef({
     inner: primaryHexagram.lowerTrigram,
     outer: primaryHexagram.upperTrigram,
@@ -159,6 +178,20 @@ export function HexagramVis3D({ primaryHexagram, transformedHexagram }: Hexagram
     hasTransformation: transformedHexagram != null,
     mood: primaryHexagram.mood,
     targetMood: transformedHexagram?.mood ?? primaryHexagram.mood,
+  });
+
+  // Camera control state
+  const cameraRef = useRef({
+    theta: 0,        // horizontal angle
+    phi: Math.PI / 2, // vertical angle (start at equator)
+    radius: 14,
+    targetTheta: 0,
+    targetPhi: Math.PI / 2,
+    targetRadius: 14,
+    isDragging: false,
+    lastX: 0,
+    lastY: 0,
+    autoRotate: true,
   });
 
   useEffect(() => {
@@ -197,15 +230,33 @@ export function HexagramVis3D({ primaryHexagram, transformedHexagram }: Hexagram
     renderer.setClearColor(0x000000, 0);
     container.appendChild(renderer.domElement);
 
-    // Points
+    // Points with persistent positions for smooth morphing
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(N * 3);
+    const targets = new Float32Array(N * 3);
     const colors = new Float32Array(N * 3);
+
+    // Initialize positions to first geometry
+    const st = stateRef.current;
+    const initInner = configs[st.inner] || configs.qian;
+    const initOuter = configs[st.outer] || configs.qian;
+    for (let i = 0; i < N; i++) {
+      const isInner = i < HALF;
+      const idx = isInner ? i : i - HALF;
+      const pt = isInner ? initInner[idx] : initOuter[idx];
+      positions[i * 3] = pt.x;
+      positions[i * 3 + 1] = pt.y;
+      positions[i * 3 + 2] = pt.z;
+      targets[i * 3] = pt.x;
+      targets[i * 3 + 1] = pt.y;
+      targets[i * 3 + 2] = pt.z;
+    }
+
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const material = new THREE.PointsMaterial({
-      size: 0.07,
+      size: 0.08,
       vertexColors: true,
       transparent: true,
       opacity: 0,
@@ -231,6 +282,42 @@ export function HexagramVis3D({ primaryHexagram, transformedHexagram }: Hexagram
     const lines = new THREE.LineSegments(lineGeo, lineMat);
     scene.add(lines);
 
+    // --- Mouse/touch interaction ---
+    const cam = cameraRef.current;
+
+    const onPointerDown = (e: PointerEvent) => {
+      cam.isDragging = true;
+      cam.autoRotate = false;
+      cam.lastX = e.clientX;
+      cam.lastY = e.clientY;
+      container.setPointerCapture(e.pointerId);
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (!cam.isDragging) return;
+      const dx = e.clientX - cam.lastX;
+      const dy = e.clientY - cam.lastY;
+      cam.targetTheta -= dx * 0.005;
+      cam.targetPhi = Math.max(0.1, Math.min(Math.PI - 0.1, cam.targetPhi - dy * 0.005));
+      cam.lastX = e.clientX;
+      cam.lastY = e.clientY;
+    };
+
+    const onPointerUp = (e: PointerEvent) => {
+      cam.isDragging = false;
+      container.releasePointerCapture(e.pointerId);
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      cam.targetRadius = Math.max(6, Math.min(30, cam.targetRadius + e.deltaY * 0.01));
+    };
+
+    container.addEventListener('pointerdown', onPointerDown);
+    container.addEventListener('pointermove', onPointerMove);
+    container.addEventListener('pointerup', onPointerUp);
+    container.addEventListener('wheel', onWheel, { passive: false });
+
     const onResize = () => {
       if (!container) return;
       const w = container.clientWidth, h = container.clientHeight;
@@ -242,62 +329,89 @@ export function HexagramVis3D({ primaryHexagram, transformedHexagram }: Hexagram
 
     const startTime = Date.now();
     let frameId: number;
+    let lastInner = st.inner;
+    let lastOuter = st.outer;
+    let morphProgress = 0; // 0 = primary, 1 = transformed
 
     const render = () => {
       frameId = requestAnimationFrame(render);
       const t = Date.now() * 0.001;
       const elapsed = (Date.now() - startTime) * 0.001;
-      const st = stateRef.current;
+      const currentState = stateRef.current;
 
-      const innerPts = configs[st.inner] || configs.qian;
-      const outerPts = configs[st.outer] || configs.qian;
-      const tInnerPts = configs[st.targetInner] || configs.qian;
-      const tOuterPts = configs[st.targetOuter] || configs.qian;
+      // Detect geometry changes and update targets
+      if (lastInner !== currentState.inner || lastOuter !== currentState.outer) {
+        lastInner = currentState.inner;
+        lastOuter = currentState.outer;
+      }
 
-      // Morph oscillation (primary ↔ transformed)
-      const morphRaw = st.hasTransformation
-        ? Math.sin(t * 0.3) * 0.5 + 0.5
-        : 0;
-      const morph = morphRaw * morphRaw * (3 - 2 * morphRaw);
+      // Compute target geometry based on morph state
+      const innerPts = configs[currentState.inner] || configs.qian;
+      const outerPts = configs[currentState.outer] || configs.qian;
+      const tInnerPts = configs[currentState.targetInner] || configs.qian;
+      const tOuterPts = configs[currentState.targetOuter] || configs.qian;
 
-      // Fade in over 2 seconds
-      const fade = Math.min(1, elapsed * 0.5);
-      material.opacity = fade * 0.85;
-      lineMat.opacity = fade * 0.05;
+      // Smooth morph oscillation for transformation
+      if (currentState.hasTransformation) {
+        const targetMorph = Math.sin(t * 0.3) * 0.5 + 0.5;
+        morphProgress += (targetMorph - morphProgress) * 0.02;
+      } else {
+        morphProgress += (0 - morphProgress) * 0.02;
+      }
+      const morph = morphProgress * morphProgress * (3 - 2 * morphProgress);
 
-      // Color
-      const cA = new THREE.Color(MOOD_COLORS[st.mood]);
-      const cB = new THREE.Color(MOOD_COLORS[st.targetMood]);
-      const col = cA.clone().lerp(cB, morph);
-
-      const pos = geometry.attributes.position.array as Float32Array;
-      const clr = geometry.attributes.color.array as Float32Array;
-
+      // Update target positions based on morph
       for (let i = 0; i < N; i++) {
         const isInner = i < HALF;
         const idx = isInner ? i : i - HALF;
         const src = isInner ? innerPts[idx] : outerPts[idx];
         const tgt = isInner ? tInnerPts[idx] : tOuterPts[idx];
 
-        const noise = Math.sin(t * 1.5 + i * 0.03) * 0.02;
-        pos[i * 3]     = src.x + (tgt.x - src.x) * morph + noise;
-        pos[i * 3 + 1] = src.y + (tgt.y - src.y) * morph + noise;
-        pos[i * 3 + 2] = src.z + (tgt.z - src.z) * morph + noise;
+        targets[i * 3] = src.x + (tgt.x - src.x) * morph;
+        targets[i * 3 + 1] = src.y + (tgt.y - src.y) * morph;
+        targets[i * 3 + 2] = src.z + (tgt.z - src.z) * morph;
+      }
 
-        const b = 0.6 + Math.sin(t + i * 0.02) * 0.4;
-        clr[i * 3]     = col.r * b;
-        clr[i * 3 + 1] = col.g * b;
-        clr[i * 3 + 2] = col.b * b;
+      // Optimal transport: smoothly lerp current positions toward targets
+      const lerpFactor = 0.04; // Controls how fast particles flow
+      const pos = geometry.attributes.position.array as Float32Array;
+      for (let i = 0; i < N * 3; i++) {
+        pos[i] += (targets[i] - pos[i]) * lerpFactor;
+      }
+
+      // Add subtle motion
+      for (let i = 0; i < N; i++) {
+        const noise = Math.sin(t * 1.2 + i * 0.03) * 0.015;
+        pos[i * 3] += noise;
+        pos[i * 3 + 1] += Math.cos(t * 1.1 + i * 0.025) * 0.015;
       }
 
       geometry.attributes.position.needsUpdate = true;
+
+      // Fade in
+      const fade = Math.min(1, elapsed * 0.5);
+      material.opacity = fade * 0.85;
+      lineMat.opacity = fade * 0.04;
+
+      // Color interpolation
+      const cA = new THREE.Color(MOOD_COLORS[currentState.mood]);
+      const cB = new THREE.Color(MOOD_COLORS[currentState.targetMood]);
+      const col = cA.clone().lerp(cB, morph);
+
+      const clr = geometry.attributes.color.array as Float32Array;
+      for (let i = 0; i < N; i++) {
+        const b = 0.6 + Math.sin(t + i * 0.02) * 0.4;
+        clr[i * 3] = col.r * b;
+        clr[i * 3 + 1] = col.g * b;
+        clr[i * 3 + 2] = col.b * b;
+      }
       geometry.attributes.color.needsUpdate = true;
 
-      // Lines connecting nearby particles
+      // Lines
       const lp = lineGeo.attributes.position.array as Float32Array;
       for (let i = 0; i < N; i++) {
         const j = (i + 5) % N;
-        lp[i * 6]     = pos[i * 3];
+        lp[i * 6] = pos[i * 3];
         lp[i * 6 + 1] = pos[i * 3 + 1];
         lp[i * 6 + 2] = pos[i * 3 + 2];
         lp[i * 6 + 3] = pos[j * 3];
@@ -307,15 +421,21 @@ export function HexagramVis3D({ primaryHexagram, transformedHexagram }: Hexagram
       lineGeo.attributes.position.needsUpdate = true;
       lineMat.color.copy(col);
 
-      // Camera orbit
-      camera.position.x = Math.sin(t * 0.12) * 2;
-      camera.position.y = Math.cos(t * 0.1) * 1.5;
-      camera.position.z = 14 + Math.sin(t * 0.15) * 2;
+      // Camera: smooth interpolation to target
+      if (cam.autoRotate) {
+        cam.targetTheta += 0.003;
+      }
+      cam.theta += (cam.targetTheta - cam.theta) * 0.08;
+      cam.phi += (cam.targetPhi - cam.phi) * 0.08;
+      cam.radius += (cam.targetRadius - cam.radius) * 0.08;
+
+      camera.position.x = cam.radius * Math.sin(cam.phi) * Math.cos(cam.theta);
+      camera.position.y = cam.radius * Math.cos(cam.phi);
+      camera.position.z = cam.radius * Math.sin(cam.phi) * Math.sin(cam.theta);
       camera.lookAt(0, 0, 0);
 
-      // Gentle rotation
-      points.rotation.y = t * 0.06;
-      points.rotation.x = Math.sin(t * 0.04) * 0.1;
+      // Gentle scene rotation
+      points.rotation.y = t * 0.02;
       lines.rotation.copy(points.rotation);
 
       renderer.render(scene, camera);
@@ -325,6 +445,10 @@ export function HexagramVis3D({ primaryHexagram, transformedHexagram }: Hexagram
 
     return () => {
       cancelAnimationFrame(frameId);
+      container.removeEventListener('pointerdown', onPointerDown);
+      container.removeEventListener('pointermove', onPointerMove);
+      container.removeEventListener('pointerup', onPointerUp);
+      container.removeEventListener('wheel', onWheel);
       window.removeEventListener('resize', onResize);
       renderer.dispose();
       geometry.dispose();
@@ -340,7 +464,7 @@ export function HexagramVis3D({ primaryHexagram, transformedHexagram }: Hexagram
   return (
     <div
       ref={containerRef}
-      className="w-full aspect-square max-w-lg mx-auto"
+      className="w-full aspect-square max-w-lg mx-auto cursor-grab active:cursor-grabbing touch-none"
       style={{ minHeight: 340 }}
     />
   );
